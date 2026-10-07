@@ -12,8 +12,15 @@ import About from "@/components/court_avenue/About";
 import CTA from "@/components/court_avenue/CTA";
 import Footer from "@/components/court_avenue/Footer";
 import ChatWidget from "@/components/booking_chat/ChatWidget";
+import type { Court, TimeSlot, BookedSlot } from "@/types";
 
-export default function Index() {
+type Props = {
+    courts: Court[];
+    timeSlots: TimeSlot[];
+    bookedSlots: BookedSlot[];
+};
+
+export default function Index({ courts }: Props) {
     const [showScrollTop, setShowScrollTop] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -57,7 +64,7 @@ export default function Index() {
 
                     <Features />
 
-                    <CourtsPreview />
+                    <CourtsPreview courts={courts} />
 
                     {/* <OpenPlay /> */}
 

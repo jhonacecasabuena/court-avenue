@@ -54,7 +54,7 @@ export default function ChatWidget({ onOpenChange }: ChatWidgetProps) {
               dotClass: "bg-green-400",
           }
         : {
-              label: "No support staff online",
+              label: "Offline ~ Please Wait",
               description: "No admin or staff member is currently available.",
               dotClass: "bg-gray-300",
           };
@@ -310,9 +310,9 @@ export default function ChatWidget({ onOpenChange }: ChatWidgetProps) {
                                 </div>
 
                                 <div>
-                                    <h3 className="font-semibold">
+                                    <h4 className="font-semibold">
                                         Court Avenue Support
-                                    </h3>
+                                    </h4>
 
                                     <div
                                         className="mt-0.5 flex items-center gap-1.5 text-xs text-red-100"
@@ -334,14 +334,14 @@ export default function ChatWidget({ onOpenChange }: ChatWidgetProps) {
                                     onClick={refreshConversation}
                                     disabled={isRefreshing}
                                     className="
-            rounded-lg
-            p-2
-            text-white/90
-            transition
-            hover:bg-white/10
-            disabled:cursor-not-allowed
-            disabled:opacity-60
-        "
+                                        rounded-lg
+                                        p-2
+                                        text-white/90
+                                        transition
+                                        hover:bg-white/10
+                                        disabled:cursor-not-allowed
+                                        disabled:opacity-60
+                                    "
                                     aria-label="Refresh conversation"
                                     title="Refresh conversation"
                                 >
@@ -350,22 +350,6 @@ export default function ChatWidget({ onOpenChange }: ChatWidgetProps) {
                                             isRefreshing ? "animate-spin" : ""
                                         }`}
                                     />
-                                </button>
-
-                                {/* Minimize */}
-                                <button
-                                    type="button"
-                                    onClick={closeChat}
-                                    className="
-                                    rounded-lg
-                                    p-2
-                                    transition
-                                    hover:bg-white/10
-                                "
-                                    aria-label="Minimize chat"
-                                    title="Minimize chat"
-                                >
-                                    <Minimize2 className="h-4 w-4" />
                                 </button>
 
                                 {/* Close */}

@@ -8,50 +8,13 @@ import {
     Users,
 } from "lucide-react";
 
-const courts = [
-    {
-        name: "Court 1",
-        image: "/images/court_avenue/court.jpg",
-        status: "Available",
-        type: "Indoor Court",
-        surface: "Professional Acrylic",
-        capacity: "2-4 Players",
-        rate: "₱350 / hour",
-        lighting: "LED Lighting",
-    },
-    {
-        name: "Court 2",
-        image: "/images/court_avenue/court.jpg",
-        status: "Available",
-        type: "Indoor Court",
-        surface: "Professional Acrylic",
-        capacity: "2-4 Players",
-        rate: "₱350 / hour",
-        lighting: "LED Lighting",
-    },
-    {
-        name: "Court 3",
-        image: "/images/court_avenue/court.jpg",
-        status: "Available",
-        type: "Indoor Court",
-        surface: "Professional Acrylic",
-        capacity: "2-4 Players",
-        rate: "₱350 / hour",
-        lighting: "LED Lighting",
-    },
-    {
-        name: "Court 4",
-        image: "/images/court_avenue/court.jpg",
-        status: "Available",
-        type: "Indoor Court",
-        surface: "Professional Acrylic",
-        capacity: "2-4 Players",
-        rate: "₱350 / hour",
-        lighting: "LED Lighting",
-    },
-];
+import type { Court } from "@/types";
 
-export default function CourtsPreview() {
+type CourtsPreviewProps = {
+    courts: Court[];
+};
+
+export default function CourtsPreview({ courts }: CourtsPreviewProps) {
     return (
         <section
             id="courts"
@@ -130,7 +93,7 @@ export default function CourtsPreview() {
                 <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {courts.map((court, index) => (
                         <motion.article
-                            key={court.name}
+                            key={court.id}
                             initial={{
                                 opacity: 0,
                                 y: 30,
@@ -151,36 +114,39 @@ export default function CourtsPreview() {
                                 y: -6,
                             }}
                             className="
-                                group
-                                overflow-hidden
-                                rounded-2xl
-                                border
-                                border-neutral-200
-                                bg-white
-                                shadow-sm
-                                transition-shadow
-                                duration-300
-                                hover:shadow-xl
-                                hover:shadow-black/10
-                            "
+                            group
+                            overflow-hidden
+                            rounded-2xl
+                            border
+                            border-neutral-200
+                            bg-white
+                            shadow-sm
+                            transition-shadow
+                            duration-300
+                            hover:shadow-xl
+                            hover:shadow-black/10
+                        "
                         >
                             {/* Court Image */}
                             <div className="relative aspect-[4/3] overflow-hidden">
                                 <img
-                                    src={court.image}
+                                    src={
+                                        court.image ??
+                                        "/images/court_avenue/court.jpg"
+                                    }
                                     alt={`${court.name} - Court Avenue`}
                                     className="
-                                        h-full
-                                        w-full
-                                        object-cover
-                                        transition-transform
-                                        duration-700
-                                        group-hover:scale-110
-                                    "
+                                    h-full
+                                    w-full
+                                    object-cover
+                                    transition-transform
+                                    duration-700
+                                    group-hover:scale-110
+                                "
                                 />
 
                                 {/* Image Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
                                 {/* Court Number */}
                                 <div className="absolute left-4 top-4">
@@ -191,21 +157,33 @@ export default function CourtsPreview() {
 
                                 {/* Availability */}
                                 <div className="absolute right-4 top-4">
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
+                                    <span
+                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-sm ${
+                                            court.status === "available"
+                                                ? "bg-green-500"
+                                                : court.status === "maintenance"
+                                                  ? "bg-amber-500"
+                                                  : "bg-neutral-500"
+                                        }`}
+                                    >
                                         <span className="h-1.5 w-1.5 rounded-full bg-white" />
 
-                                        {court.status}
+                                        {court.status.charAt(0).toUpperCase() +
+                                            court.status.slice(1)}
                                     </span>
                                 </div>
 
                                 {/* Court Type */}
-                                <div className="absolute bottom-4 left-4">
-                                    <p className="text-xs font-medium text-white/80">
-                                        {court.type}
+                                <div className="absolute bottom-4 left-4 right-4">
+                                    <p className="text-xs font-sm  tracking-wide text-white/80">
+                                        {court.court_type === "indoor"
+                                            ? "Indoor Court"
+                                            : "Outdoor Court"}
                                     </p>
 
-                                    <p className="mt-0.5 text-lg font-black text-white">
-                                        {court.surface}
+                                    <p className="mt-0.5 line-clamp-2 text-md font-black text-white">
+                                        {court.description ||
+                                            "Professional Pickleball Court"}
                                     </p>
                                 </div>
                             </div>
@@ -225,13 +203,18 @@ export default function CourtsPreview() {
 
                                     <CheckCircle2
                                         size={21}
-                                        className="mt-1 shrink-0 text-green-600"
+                                        className={`mt-1 shrink-0 ${
+                                            court.status === "available"
+                                                ? "text-green-600"
+                                                : "text-neutral-400"
+                                        }`}
                                         strokeWidth={2.5}
                                     />
                                 </div>
 
                                 {/* Details */}
                                 <div className="mt-5 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-4">
+                                    {/* Capacity */}
                                     <div className="flex items-center gap-2">
                                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b0002a]">
                                             <Users size={15} />
@@ -243,11 +226,12 @@ export default function CourtsPreview() {
                                             </p>
 
                                             <p className="text-xs font-bold text-neutral-700">
-                                                {court.capacity}
+                                                2–{court.capacity} Players
                                             </p>
                                         </div>
                                     </div>
 
+                                    {/* Lighting */}
                                     <div className="flex items-center gap-2">
                                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b0002a]">
                                             <Lightbulb size={15} />
@@ -259,24 +243,34 @@ export default function CourtsPreview() {
                                             </p>
 
                                             <p className="text-xs font-bold text-neutral-700">
-                                                {court.lighting}
+                                                {court.lighting
+                                                    ? "LED Lighting"
+                                                    : "No Lighting"}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Bottom */}
-                                {/* <div className="mt-5 flex items-center justify-between border-t border-neutral-100 pt-4">
+                                {/* Court Rate */}
+                                <div className="mt-5 flex items-center justify-between border-t border-neutral-100 pt-4">
                                     <div>
                                         <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
                                             Court Rate
                                         </p>
 
-                                        <p className="mt-0.5 text-lg font-black text-[#b0002a]">
-                                            {court.rate}
+                                        <p className="mt-0.5 text-md font-black text-[#b0002a]">
+                                            ₱
+                                            {Number(court.price).toLocaleString(
+                                                "en-PH",
+                                                {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                },
+                                            )}{" "}
+                                            / hour
                                         </p>
                                     </div>
-                                </div> */}
+                                </div>
                             </div>
                         </motion.article>
                     ))}
@@ -289,21 +283,21 @@ export default function CourtsPreview() {
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: 0.2 }}
                     className="
-                        mt-8
-                        flex
-                        flex-col
-                        gap-3
-                        rounded-2xl
-                        border
-                        border-neutral-200
-                        bg-white
-                        p-4
-                        shadow-sm
-                        sm:flex-row
-                        sm:items-center
-                        sm:justify-between
-                        sm:px-6
-                    "
+                    mt-8
+                    flex
+                    flex-col
+                    gap-3
+                    rounded-2xl
+                    border
+                    border-neutral-200
+                    bg-white
+                    p-4
+                    shadow-sm
+                    sm:flex-row
+                    sm:items-center
+                    sm:justify-between
+                    sm:px-6
+                "
                 >
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50 text-green-600">

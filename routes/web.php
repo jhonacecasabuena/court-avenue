@@ -1,12 +1,42 @@
 <?php
 
-// use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CourtAvenueController;
 use App\Http\Controllers\SupportController;
 use App\Models\SupportConversation;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::inertia('/', 'court_avenue/index')->name('home');
+// ============================================================
+// Public
+// ============================================================
+
+Route::get('/', [CourtAvenueController::class,'index'])->name('home');
+
+
+// ============================================================
+// Booking
+// ============================================================
+
+// Booking page
+Route::get('/booking', [
+    BookingController::class,
+    'index',
+])->name('booking.index');
+
+// Receive booking selection
+// Guest and authenticated users can access this.
+Route::post('/booking/checkout', [
+    BookingController::class,
+    'checkout',
+])->name('booking.checkout.store');
+
+// Checkout page
+// This will be the destination after login/register.
+Route::get('/booking/checkout', [
+    BookingController::class,
+    'checkoutPage',
+])->name('booking.checkout');
 
 
 // ============================================================
@@ -16,7 +46,9 @@ Route::inertia('/', 'court_avenue/index')->name('home');
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/admin/dashboard', function () {
-        return Inertia::render('court_avenue/admin/dashboard');
+        return Inertia::render(
+            'court_avenue/admin/dashboard'
+        );
     })->name('admin.dashboard');
 });
 
@@ -28,7 +60,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::middleware(['auth', 'role:staff'])->group(function () {
 
     Route::get('/staff/dashboard', function () {
-        return Inertia::render('staff/dashboard');
+        return Inertia::render(
+            'staff/dashboard'
+        );
     })->name('staff.dashboard');
 });
 
@@ -42,18 +76,42 @@ Route::middleware('auth')->group(function () {
     // ========================================================
     // Bookings
     // ========================================================
+     Route::get('/booking/my-bookings', [
+        BookingController::class,
+        'myBookings',
+    ])->name('booking.my-bookings');
 
-    // Route::get('/bookings/create', [
+
+      Route::post('/booking/confirm', [
+        BookingController::class,
+        'confirmPaidBooking',
+    ])->name('booking.confirm');
+
+    Route::get('/booking/confirmation/{booking}', [
+    BookingController::class,
+    'confirmation',
+])->name('booking.confirmation');
+
+    // Booking availability
+    //
+    // Later this will be handled by BookingController.
+    // It will return available/booked courts for the
+    // selected dates and time slots.
+    //
+    // Route::get('/booking/availability', [
     //     BookingController::class,
-    //     'create',
-    // ])->name('bookings.create');
+    //     'availability',
+    // ])->name('booking.availability');
 
-    // Route::post('/bookings', [
+
+    // Create booking
+    //
+    // Route::post('/booking', [
     //     BookingController::class,
     //     'store',
     // ])
     //     ->middleware('verified')
-    //     ->name('bookings.store');
+    //     ->name('booking.store');
 
 
     // ========================================================
@@ -85,9 +143,6 @@ Route::middleware('auth')->group(function () {
         // ----------------------------------------------------
         // Conversation - Inertia Page
         // ----------------------------------------------------
-        //
-        // Explicitly pass conversationId to the Inertia page.
-        //
 
         Route::get('/support/conversations/{conversation}', function (
             SupportConversation $conversation

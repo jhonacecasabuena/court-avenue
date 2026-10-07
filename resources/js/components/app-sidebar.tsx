@@ -1,9 +1,8 @@
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import {
     CalendarDays,
     CircleHelp,
     LayoutDashboard,
-    Settings,
     Trophy,
     Users,
     MapPin,
@@ -24,6 +23,19 @@ import {
 } from "@/components/ui/sidebar";
 
 import type { NavItem } from "@/types";
+
+type AuthUser = {
+    id: number;
+    name: string;
+    email: string;
+    role?: string | null;
+};
+
+type PageProps = {
+    auth: {
+        user: AuthUser | null;
+    };
+};
 
 const mainNavItems: NavItem[] = [
     {
@@ -56,14 +68,18 @@ const mainNavItems: NavItem[] = [
         href: "/support/inbox",
         icon: CircleHelp,
     },
-    // {
-    //     title: "Settings",
-    //     href: "/admin/settings",
-    //     icon: Settings,
-    // },
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<PageProps>().props;
+
+    const isAdmin = auth.user?.role === "admin";
+
+    // Only admins should see the admin navigation.
+    if (!isAdmin) {
+        return null;
+    }
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             {/* Logo */}

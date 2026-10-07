@@ -37,6 +37,11 @@ export default function Login({ status, canResetPassword }: Props) {
             <Form
                 {...store.form()}
                 resetOnSuccess={["password"]}
+                onSuccess={() => {
+                    toast.success("Welcome back!", {
+                        description: "You have successfully logged in.",
+                    });
+                }}
                 className="space-y-6"
             >
                 {({ processing, errors }) => (

@@ -1,6 +1,13 @@
 import { Link, router, usePage } from "@inertiajs/react";
 import { AnimatePresence, motion } from "motion/react";
-import { CalendarDays, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import {
+    CalendarDays,
+    ChevronDown,
+    ClipboardList,
+    LogOut,
+    Menu,
+    X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -165,6 +172,7 @@ export default function Navbar() {
                                         transition={{ duration: 0.15 }}
                                         className="absolute right-0 top-[calc(100%+10px)] w-56 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl shadow-neutral-900/10"
                                     >
+                                        {/* User Info */}
                                         <div className="border-b border-neutral-100 px-3 py-3">
                                             <p className="truncate text-sm font-bold text-neutral-900">
                                                 {user.name}
@@ -175,6 +183,17 @@ export default function Navbar() {
                                             </p>
                                         </div>
 
+                                        {/* My Bookings */}
+                                        <Link
+                                            href="/booking/my-bookings"
+                                            onClick={closeMenu}
+                                            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 hover:text-[#b0002a]"
+                                        >
+                                            <ClipboardList size={17} />
+                                            My Bookings
+                                        </Link>
+
+                                        {/* Logout */}
                                         <button
                                             type="button"
                                             onClick={handleLogout}
@@ -221,8 +240,73 @@ export default function Navbar() {
                     )}
 
                     {user && (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#b0002a] text-sm font-bold text-white">
-                            {initials}
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setUserMenuOpen((value) => !value)
+                                }
+                                aria-label="Open profile menu"
+                                aria-expanded={userMenuOpen}
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#b0002a] text-sm font-bold text-white transition hover:bg-[#920024] active:scale-95"
+                            >
+                                {initials}
+                            </button>
+
+                            <AnimatePresence>
+                                {userMenuOpen && (
+                                    <motion.div
+                                        initial={{
+                                            opacity: 0,
+                                            y: -5,
+                                            scale: 0.97,
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            y: 0,
+                                            scale: 1,
+                                        }}
+                                        exit={{
+                                            opacity: 0,
+                                            y: -5,
+                                            scale: 0.97,
+                                        }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 top-[calc(100%+10px)] z-50 w-48 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl shadow-neutral-900/10"
+                                    >
+                                        {/* User info */}
+                                        <div className="border-b border-neutral-100 px-3 py-3">
+                                            <p className="truncate text-sm font-bold text-neutral-900">
+                                                {user.name}
+                                            </p>
+
+                                            <p className="mt-0.5 truncate text-xs text-neutral-500">
+                                                {user.email}
+                                            </p>
+                                        </div>
+
+                                        {/* My Bookings */}
+                                        <Link
+                                            href="/booking/my-bookings"
+                                            onClick={closeMenu}
+                                            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 hover:text-[#b0002a]"
+                                        >
+                                            <ClipboardList size={17} />
+                                            My Bookings
+                                        </Link>
+
+                                        {/* Logout */}
+                                        <button
+                                            type="button"
+                                            onClick={handleLogout}
+                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-neutral-600 transition hover:bg-red-50 hover:text-[#b0002a]"
+                                        >
+                                            <LogOut size={17} />
+                                            Logout
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     )}
 
@@ -295,36 +379,6 @@ export default function Navbar() {
                                 <CalendarDays size={17} />
                                 Book a Court
                             </Link>
-
-                            {/* Mobile user section */}
-                            {user && (
-                                <div className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#b0002a] text-sm font-bold text-white">
-                                            {initials}
-                                        </div>
-
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-bold text-neutral-900">
-                                                {user.name}
-                                            </p>
-
-                                            <p className="truncate text-xs text-neutral-500">
-                                                {user.email}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleLogout}
-                                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-red-200 hover:bg-red-50 hover:text-[#b0002a]"
-                                    >
-                                        <LogOut size={16} />
-                                        Logout
-                                    </button>
-                                </div>
-                            )}
                         </motion.div>
                     </motion.div>
                 )}
