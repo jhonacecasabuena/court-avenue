@@ -156,7 +156,7 @@ export default function CourtSchedule({
                                             {formatTime(slot.start_time)}
                                         </div>
 
-                                        <div className="text-[8px] text-gray-500">
+                                        <div className="text-[9px] font-semibold text-gray-600">
                                             {formatTime(slot.end_time)}
                                         </div>
                                     </td>
@@ -196,13 +196,13 @@ export default function CourtSchedule({
                                                     }}
                                                     className={`h-7 w-full rounded text-[8px] font-semibold leading-none transition sm:h-8 sm:text-[9px] ${
                                                         status === "confirmed"
-                                                            ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                                                            ? "cursor-not-allowed bg-gray-100 text-gray-700"
                                                             : status ===
                                                                 "pending"
                                                               ? "cursor-not-allowed bg-yellow-50 text-yellow-700"
                                                               : selected
-                                                                ? "bg-[#b91c1c] text-white"
-                                                                : "bg-green-50 text-green-700 hover:bg-green-100"
+                                                                ? "bg-[#b91c1c] text-white tracking-wider"
+                                                                : "tracking-wider bg-green-50 text-green-700 hover:bg-green-100"
                                                     }`}
                                                 >
                                                     {status === "confirmed"

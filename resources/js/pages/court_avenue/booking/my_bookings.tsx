@@ -348,7 +348,8 @@ export default function MyBookings({ bookings }: Props) {
                                                             <p className="text-sm font-bold text-neutral-800">
                                                                 {formatCurrency(
                                                                     item.price,
-                                                                )}
+                                                                )}{" "}
+                                                                + service_fee
                                                             </p>
                                                         </div>
                                                     </div>
