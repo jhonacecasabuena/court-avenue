@@ -1,4 +1,4 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import {
     ArrowLeft,
     CalendarDays,
@@ -356,7 +356,7 @@ export default function MyBookings({ bookings }: Props) {
                                             </div>
 
                                             {/* Payment details */}
-                                            <div className="border-t border-neutral-100 bg-neutral-50/70 px-5 py-4 sm:px-6">
+                                            {/* <div className="border-t border-neutral-100 bg-neutral-50/70 px-5 py-4 sm:px-6">
                                                 <div className="grid gap-3 text-xs sm:grid-cols-3">
                                                     <div>
                                                         <p className="text-xs font-medium text-neutral-500">
@@ -441,6 +441,127 @@ export default function MyBookings({ bookings }: Props) {
                                                         </p>
                                                     </div>
                                                 </div>
+                                            </div> */}
+                                            {/* Payment details */}
+                                            <div className="border-t border-neutral-100 bg-neutral-50/70 px-5 py-4 sm:px-6">
+                                                <div className="grid gap-3 text-xs sm:grid-cols-4">
+                                                    {/* Total */}
+                                                    <div>
+                                                        <p className="text-xs font-medium text-neutral-500">
+                                                            Total
+                                                        </p>
+
+                                                        <p className="text-lg font-black text-neutral-900">
+                                                            {formatCurrency(
+                                                                booking.total,
+                                                            )}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Payment Status */}
+                                                    <div>
+                                                        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                                            Payment Status
+                                                        </p>
+
+                                                        <div
+                                                            className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                                                                booking.payment_status ===
+                                                                "paid"
+                                                                    ? "bg-green-50 text-green-700"
+                                                                    : booking.payment_status ===
+                                                                        "pending"
+                                                                      ? "bg-yellow-50 text-yellow-700"
+                                                                      : "bg-red-50 text-red-700"
+                                                            }`}
+                                                        >
+                                                            {booking.payment_status ===
+                                                                "paid" && (
+                                                                <CheckCircle2
+                                                                    size={13}
+                                                                />
+                                                            )}
+
+                                                            {booking.payment_status ===
+                                                                "pending" && (
+                                                                <Clock3
+                                                                    size={13}
+                                                                />
+                                                            )}
+
+                                                            {booking.payment_status ===
+                                                                "expired" && (
+                                                                <XCircle
+                                                                    size={13}
+                                                                />
+                                                            )}
+
+                                                            {booking.payment_status ===
+                                                            "paid"
+                                                                ? "PAID"
+                                                                : booking.payment_status ===
+                                                                    "pending"
+                                                                  ? "Pending"
+                                                                  : "Expired"}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Payment Method */}
+                                                    <div>
+                                                        <p className="text-neutral-500">
+                                                            Payment Method
+                                                        </p>
+
+                                                        <p className="mt-1 flex items-center gap-1.5 font-bold capitalize text-neutral-800">
+                                                            <CreditCard
+                                                                size={14}
+                                                            />
+                                                            {booking.payment_method ??
+                                                                "—"}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Payment Reference */}
+                                                    <div>
+                                                        <p className="text-neutral-500">
+                                                            Payment Reference
+                                                        </p>
+
+                                                        <p className="mt-1 break-all font-bold text-neutral-800">
+                                                            {booking.payment_reference ??
+                                                                "—"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Complete Payment */}
+                                                {booking.status === "pending" &&
+                                                    booking.payment_status ===
+                                                        "pending" && (
+                                                        <div className="mt-4 border-t border-neutral-200 pt-4">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    router.post(
+                                                                        "/booking/confirm",
+                                                                    );
+                                                                }}
+                                                                className="mt-5 flex w-full items-center justify-center gap-2 rounded-md bg-[#b91c1c] px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#991b1b]"
+                                                            >
+                                                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                                                Confirm Paid
+                                                                Booking
+                                                            </button>
+
+                                                            <p className="mt-2 text-center text-xs text-neutral-500">
+                                                                Complete your
+                                                                payment before
+                                                                the 8-minute
+                                                                reservation
+                                                                window expires.
+                                                            </p>
+                                                        </div>
+                                                    )}
                                             </div>
                                         </div>
                                     );
