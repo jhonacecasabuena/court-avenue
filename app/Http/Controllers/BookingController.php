@@ -14,11 +14,17 @@ use Inertia\Response;
 
 class BookingController extends Controller
 {
-    /**
-     * Display booking page.
-     */
     public function index(): Response
     {
+        // Delete all expired unpaid bookings.
+        // No user_id condition — this applies to every user.
+        Booking::query()
+            ->where('status', 'pending')
+            ->where('payment_status', 'pending')
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->delete();
+
         $courts = Court::query()
             ->where('status', 'available')
             ->orderBy('id')
@@ -29,74 +35,106 @@ class BookingController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Get currently reserved slots
-        |--------------------------------------------------------------------------
-        |
-        | Confirmed bookings are always unavailable.
-        |
-        | Pending bookings are unavailable only while their
-        | 8-minute payment window has not expired.
-        |
-        */
-
         $bookedSlots = BookingItem::query()
-                ->whereDate(
-                    'booking_date',
-                    '>=',
-                    now()->toDateString()
-                )
-                ->whereHas('booking', function ($query) {
-                    $query->where(function ($query) {
-                        // Confirmed bookings are permanently reserved.
-                        $query->where('status', 'confirmed')
-
-                            // Pending bookings are reserved only for 8 minutes.
-                            ->orWhere(function ($query) {
-                                $query
-                                    ->where('status', 'pending')
-                                    ->where('expires_at', '>', now());
-                            });
-                    });
-                })
-                ->with('booking:id,status')
-                ->get([
-                    'booking_id',
-                    'booking_date',
-                    'court_id',
-                    'time_slot_id',
-                ])
-                ->map(function ($item) {
-                    return [
-                        'date' => $item->booking_date->format('Y-m-d'),
-                        'court_id' => $item->court_id,
-                        'time_slot_id' => $item->time_slot_id,
-
-                        // IMPORTANT
-                        'status' => $item->booking->status,
-                    ];
-                })
-                ->values();
+            ->whereDate(
+                'booking_date',
+                '>=',
+                now()->toDateString()
+            )
+            ->whereHas('booking', function ($query) {
+                $query->whereIn('status', [
+                    'pending',
+                    'confirmed',
+                ]);
+            })
+            ->with('booking:id,status,payment_status')
+            ->get([
+                'booking_id',
+                'booking_date',
+                'court_id',
+                'time_slot_id',
+            ])
+            ->map(function ($item) {
+                return [
+                    'date' => $item->booking_date->format('Y-m-d'),
+                    'court_id' => $item->court_id,
+                    'time_slot_id' => $item->time_slot_id,
+                    'status' => $item->booking->status,
+                ];
+            })
+            ->values();
 
         return Inertia::render(
             'court_avenue/booking/index',
             [
                 'courts' => $courts,
-
                 'timeSlots' => $timeSlots,
-
                 'bookedSlots' => $bookedSlots,
             ]
         );
     }
 
-    /**
-     * Receive booking selection.
-     *
-     * Creates a PENDING booking and temporarily reserves
-     * the selected court/time slots for 8 minutes.
-     */
+    public function uploadPaymentProof(Request $request)
+    {
+        $request->validate([
+            'booking_id' => ['required', 'integer'],
+            'payment_proof' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+        ]);
+
+        $booking = Booking::query()
+            ->where('id', $request->booking_id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        // Only allow payment proof for pending unpaid bookings
+        if (
+            $booking->status !== 'pending' ||
+            $booking->payment_status !== 'pending' ||
+            $booking->payment_proof
+        ) {
+            return back()->with(
+                'error',
+                'This booking is not available for payment proof upload.'
+            );
+        }
+
+        // Check payment expiration
+        if (
+            $booking->expires_at &&
+            $booking->expires_at->isPast()
+        ) {
+            $booking->update([
+                'status' => 'cancelled',
+                'payment_status' => 'expired',
+            ]);
+
+            return back()->with(
+                'error',
+                'Your payment window has expired.'
+            );
+        }
+
+        $path = $request->file('payment_proof')
+            ->store('payment-proofs', 'public');
+
+        $booking->update([
+            'payment_proof' => $path,
+            'payment_status' => 'awaiting_confirmation',
+            'expires_at' => null,
+        ]);
+
+        return back()->with(
+            'success',
+            'Payment proof uploaded successfully. Your payment is now awaiting confirmation.'
+        );
+    }
+
+
     public function checkout(Request $request)
     {
         $validated = $request->validate([
@@ -242,42 +280,20 @@ class BookingController extends Controller
 
                 foreach ($selections as $selection) {
                     $alreadyReserved = BookingItem::query()
-                        ->where(
-                            'court_id',
-                            $selection['court_id']
-                        )
-                        ->where(
-                            'time_slot_id',
-                            $selection['time_slot_id']
-                        )
+                        ->where('court_id', $selection['court_id'])
+                        ->where('time_slot_id', $selection['time_slot_id'])
                         ->whereDate(
                             'booking_date',
                             $selection['date']
                         )
-                        ->whereHas(
-                            'booking',
-                            function ($query) {
-                                $query->where(
-                                    'status',
-                                    'confirmed'
-                                )
-                                ->orWhere(
-                                    function ($query) {
-                                        $query
-                                            ->where(
-                                                'status',
-                                                'pending'
-                                            )
-                                            ->where(
-                                                'expires_at',
-                                                '>',
-                                                now()
-                                            );
-                                    }
-                                );
-                            }
-                        )
+                        ->whereHas('booking', function ($query) {
+                            $query->whereIn('status', [
+                                'pending',
+                                'confirmed',
+                            ]);
+                        })
                         ->exists();
+                    
 
                     if ($alreadyReserved) {
                         throw new \RuntimeException(
@@ -300,7 +316,7 @@ class BookingController extends Controller
                     }
                 );
 
-                $serviceFee = 20;
+                $serviceFee = 0;
 
                 $total = $subtotal + $serviceFee;
 
@@ -353,7 +369,7 @@ class BookingController extends Controller
                         'pending',
 
                     'payment_method' =>
-                        'online',
+                        'manual',
 
                     'payment_reference' =>
                         null,
@@ -428,9 +444,7 @@ class BookingController extends Controller
         );
     }
 
-    /**
-     * Display checkout page.
-     */
+
     public function checkoutPage(Request $request)
     {
         /*
@@ -494,13 +508,14 @@ class BookingController extends Controller
             $bookingModel->expires_at &&
             $bookingModel->expires_at->isPast()
         ) {
-            $bookingModel->update([
-                'status' =>
-                    'cancelled',
+            // $bookingModel->update([
+            //     'status' =>
+            //         'cancelled',
 
-                'payment_status' =>
-                    'expired',
-            ]);
+            //     'payment_status' =>
+            //         'expired',
+            // ]);
+            $bookingModel->delete();
 
             $request->session()->forget(
                 'booking.pending_id'
@@ -590,18 +605,10 @@ class BookingController extends Controller
         );
     }
 
-    /**
-     * Confirm paid booking.
-     *
-     * TEMPORARY:
-     * This currently simulates successful payment.
-     *
-     * Later, PayMongo/Stripe webhook should perform
-     * the actual confirmation.
-     */
-    public function confirmPaidBooking(
-        Request $request
-    ) {
+
+
+    public function confirmPaidBooking(Request $request)
+    {
         $pendingBookingId = $request->session()->get(
             'booking.pending_id'
         );
@@ -623,16 +630,28 @@ class BookingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | Validate payment proof
+        |--------------------------------------------------------------------------
+        */
+
+        $validated = $request->validate([
+            'payment_proof' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png',
+                'max:5120',
+            ],
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
         | Find pending booking
         |--------------------------------------------------------------------------
         */
 
         $booking = Booking::query()
             ->where('id', $pendingBookingId)
-            ->where(
-                'user_id',
-                $user->id
-            )
+            ->where('user_id', $user->id)
             ->with([
                 'items',
                 'items.court',
@@ -665,11 +684,8 @@ class BookingController extends Controller
             $booking->expires_at->isPast()
         ) {
             $booking->update([
-                'status' =>
-                    'cancelled',
-
-                'payment_status' =>
-                    'expired',
+                'status' => 'cancelled',
+                'payment_status' => 'expired',
             ]);
 
             $request->session()->forget(
@@ -691,38 +707,64 @@ class BookingController extends Controller
         */
 
         if ($booking->status !== 'pending') {
-            return redirect()->route(
-                'booking.confirmation',
-                $booking->booking_reference
-            );
+            return redirect()
+                ->route(
+                    'booking.confirmation',
+                    $booking->booking_reference
+                );
         }
 
         /*
         |--------------------------------------------------------------------------
-        | TEMPORARY PAYMENT CONFIRMATION
+        | Store payment proof
+        |--------------------------------------------------------------------------
+        */
+
+        $proofPath = $request
+            ->file('payment_proof')
+            ->store(
+                'payment-proofs',
+                'public'
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update booking
         |--------------------------------------------------------------------------
         |
-        | Later this should be handled by PayMongo/Stripe webhook.
+        | IMPORTANT:
+        |
+        | Customer submission does NOT mark the booking as paid.
         |
         */
 
         $booking->update([
+            'payment_proof' =>
+                $proofPath,
+
             'status' =>
-                'confirmed',
+                'pending',
 
             'payment_status' =>
-                'paid',
+                'awaiting_confirmation',
+
+            'payment_method' =>
+                'manual',
 
             'payment_reference' =>
                 null,
 
             'paid_at' =>
-                now(),
+                null,
 
             /*
             |--------------------------------------------------------------------------
-            | No longer needs an expiration time.
+            | Keep expiration cleared after proof submission?
             |--------------------------------------------------------------------------
+            |
+            | Since the customer has already submitted payment proof,
+            | the booking should now wait for admin verification.
+            |
             */
 
             'expires_at' =>
@@ -741,19 +783,19 @@ class BookingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Confirmation
+        | Redirect to My Bookings
         |--------------------------------------------------------------------------
         */
 
-        return redirect()->route(
-            'booking.confirmation',
-            $booking->booking_reference
-        );
+        return redirect()
+            ->route('booking.my-bookings')
+            ->with(
+                'success',
+                'Your booking and payment proof have been submitted. Your payment is awaiting confirmation.'
+            );
     }
 
-    /**
-     * Booking confirmation page.
-     */
+
     public function confirmation(
         string $bookingReference
     ): Response {
@@ -795,10 +837,11 @@ class BookingController extends Controller
             ->where('payment_status', 'pending')
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now())
-            ->update([
-                'status' => 'cancelled',
-                'payment_status' => 'expired',
-            ]);
+            ->delete();
+            // ->update([
+            //     'status' => 'cancelled',
+            //     'payment_status' => 'expired',
+            // ]);
 
         /*
         |--------------------------------------------------------------------------

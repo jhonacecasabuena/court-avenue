@@ -133,15 +133,15 @@ export default function DateSelector({ selectedDates, onToggleDate }: Props) {
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#b91c1c] sm:text-[9px] lg:text-[10px]">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#b91c1c] sm:text-[10px] lg:text-[11px]">
                                 Reservation
                             </p>
 
-                            <h2 className="text-xs font-bold text-gray-900 sm:text-sm lg:text-base">
+                            <h2 className="text-sm font-bold text-gray-900 sm:text-base lg:text-lg">
                                 Select dates
                             </h2>
 
-                            <p className="mt-0.5 text-[9px] text-gray-500 sm:text-[10px] lg:text-[11px]">
+                            <p className="mt-0.5 text-[10px] text-gray-700 sm:text-[11px] lg:text-xs">
                                 Multiple dates allowed
                             </p>
                         </div>
@@ -151,7 +151,7 @@ export default function DateSelector({ selectedDates, onToggleDate }: Props) {
                     <button
                         type="button"
                         onClick={() => setShowCalendar((current) => !current)}
-                        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-red-200 bg-white px-2.5 text-[9px] font-semibold text-[#b91c1c] transition hover:bg-red-50 lg:hidden"
+                        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-red-200 bg-white px-2.5 text-[10px] font-semibold text-[#b91c1c] transition hover:bg-red-50 lg:hidden"
                         aria-expanded={showCalendar}
                         aria-label={
                             showCalendar ? "Minimize calendar" : "Show calendar"
@@ -186,11 +186,11 @@ export default function DateSelector({ selectedDates, onToggleDate }: Props) {
                     </button>
 
                     <div className="text-center">
-                        <p className="text-[11px] font-bold text-gray-900 sm:text-xs lg:text-sm">
+                        <p className="text-sm font-bold text-gray-900 sm:text-md lg:text-base tracking-wider">
                             {monthName}
                         </p>
 
-                        <p className="text-[8px] text-gray-400 sm:text-[9px] lg:text-[10px]">
+                        <p className="text-[11px] text-gray-500 sm:text-[10px] lg:text-[11px]">
                             Choose your playing date
                         </p>
                     </div>
@@ -210,7 +210,7 @@ export default function DateSelector({ selectedDates, onToggleDate }: Props) {
                     {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
                         <div
                             key={`${day}-${index}`}
-                            className="py-1 text-center text-[8px] font-bold uppercase tracking-wide text-gray-400 sm:text-[9px] lg:py-1.5 lg:text-[10px]"
+                            className="py-1 text-center text-[9px] font-bold uppercase tracking-wide text-gray-400 sm:text-[10px] lg:py-1.5 lg:text-[11px]"
                         >
                             {day}
                         </div>
@@ -239,7 +239,7 @@ export default function DateSelector({ selectedDates, onToggleDate }: Props) {
                                 type="button"
                                 disabled={past}
                                 onClick={() => onToggleDate(item.date)}
-                                className={`relative flex aspect-square items-center justify-center rounded-md text-[10px] font-semibold transition sm:text-[11px] lg:text-xs ${
+                                className={`relative flex aspect-square items-center justify-center rounded-md text-[11px] font-semibold transition sm:text-xs lg:text-sm ${
                                     selected
                                         ? "bg-[#b91c1c] text-white shadow-sm"
                                         : past
@@ -269,7 +269,7 @@ export default function DateSelector({ selectedDates, onToggleDate }: Props) {
                                 }`}
                             />
 
-                            <span className="text-[9px] font-semibold text-gray-600 sm:text-[10px] lg:text-[11px]">
+                            <span className="text-[12px] font-semibold text-gray-600 sm:text-[11px] lg:text-xs">
                                 {selectedDates.length > 0
                                     ? `${selectedDates.length} date${
                                           selectedDates.length > 1 ? "s" : ""
@@ -279,7 +279,7 @@ export default function DateSelector({ selectedDates, onToggleDate }: Props) {
                         </div>
 
                         {selectedDates.length > 0 && (
-                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-[8px] font-bold text-[#b91c1c] sm:text-[9px] lg:text-[10px]">
+                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-bold text-[#b91c1c] sm:text-[10px] lg:text-[11px]">
                                 Ready
                             </span>
                         )}

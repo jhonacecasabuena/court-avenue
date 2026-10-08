@@ -87,6 +87,14 @@ Route::middleware('auth')->group(function () {
         'confirmPaidBooking',
     ])->name('booking.confirm');
 
+        // Upload payment proof from My Bookings
+    Route::post('/booking/my-bookings/payment-proof', [
+        BookingController::class,
+        'uploadPaymentProof',
+    ])->name('booking.my-bookings.payment-proof');
+
+
+
     Route::get('/booking/confirmation/{booking}', [
     BookingController::class,
     'confirmation',

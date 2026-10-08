@@ -72,22 +72,9 @@ export function useBooking(
         }, 0);
     }, [selections, courts]);
 
-    const serviceFee = selections.length > 0 ? 20 : 0;
+    const serviceFee = selections.length > 0 ? 0 : 0;
 
     const total = subtotal + serviceFee;
-
-    const isSlotBooked = (
-        date: string,
-        timeSlotId: number,
-        courtId: number,
-    ) => {
-        return bookedSlots.some(
-            (slot) =>
-                slot.date === date &&
-                slot.time_slot_id === timeSlotId &&
-                slot.court_id === courtId,
-        );
-    };
 
     const getSlotStatus = (
         date: string,
@@ -101,9 +88,21 @@ export function useBooking(
                 item.court_id === courtId,
         );
 
-        return slot?.status ?? "available";
-    };
+        if (!slot) {
+            return "available";
+        }
 
+        if (slot.status === "confirmed") {
+            return "confirmed";
+        }
+
+        if (slot.status === "pending") {
+            return "pending";
+        }
+
+        // cancelled / expired / anything else
+        return "available";
+    };
     return {
         selectedDates,
         selections,

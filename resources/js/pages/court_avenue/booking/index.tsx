@@ -1,4 +1,4 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useEffect } from "react";
 import {
     ArrowLeft,
@@ -15,6 +15,18 @@ import BookingSummary from "@/components/booking_court_avenue/BookingSummary";
 import { useBooking } from "@/hooks/use-booking";
 import type { Court, TimeSlot, BookedSlot } from "@/types";
 
+type AuthUser = {
+    id: number;
+    name: string;
+    email: string;
+};
+
+type PageProps = {
+    auth: {
+        user: AuthUser | null;
+    };
+};
+
 type BookingPageProps = {
     courts: Court[];
     timeSlots: TimeSlot[];
@@ -26,6 +38,8 @@ export default function Booking({
     timeSlots,
     bookedSlots,
 }: BookingPageProps) {
+    const { auth } = usePage<PageProps>().props;
+
     const {
         selectedDates,
         selections,
@@ -58,46 +72,52 @@ export default function Booking({
                         <div className="flex items-center gap-3">
                             <Link
                                 href="/"
-                                className="flex h-8 w-8 items-center justify-center rounded-md bg-white/10 transition hover:bg-white/20"
+                                className="group flex items-center gap-3 rounded-lg px-1.5 py-1 transition hover:bg-white/10"
                             >
-                                <ArrowLeft className="h-4 w-4" />
+                                {/* Back icon */}
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/10 transition group-hover:bg-white/20">
+                                    <ArrowLeft className="h-4 w-4" />
+                                </div>
+
+                                {/* Title */}
+                                <div>
+                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-red-100">
+                                        Court Avenue
+                                    </p>
+
+                                    <h1 className="text-sm font-bold leading-tight sm:text-base">
+                                        Book a Court
+                                    </h1>
+                                </div>
                             </Link>
-
-                            <div>
-                                <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-red-100">
-                                    Court Avenue
-                                </p>
-
-                                <h1 className="text-sm font-bold leading-tight sm:text-base">
-                                    Book a Court
-                                </h1>
-                            </div>
                         </div>
 
-                        <div className="hidden items-center sm:flex">
-                            <Link
-                                href="/booking/my-bookings"
-                                className="group relative flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 transition-all duration-200 hover:border-white/20 hover:bg-white/10"
-                            >
-                                {/* Icon */}
-                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#b91c1c] shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:bg-red-50 group-hover:shadow-md">
-                                    <ClipboardList className="h-4 w-4 transition-transform duration-200 group-hover:-rotate-3" />
-                                </div>
+                        <div className=" items-center sm:flex">
+                            {auth.user && (
+                                <Link
+                                    href="/booking/my-bookings"
+                                    className="group relative flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 transition-all duration-200 hover:border-white/20 hover:bg-white/10"
+                                >
+                                    {/* Icon */}
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#b91c1c] shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:bg-red-50 group-hover:shadow-md">
+                                        <ClipboardList className="h-4 w-4 transition-transform duration-200 group-hover:-rotate-3" />
+                                    </div>
 
-                                {/* Text */}
-                                <div className="leading-tight">
-                                    <p className="text-sm font-bold text-white transition-colors duration-200 group-hover:text-red-50">
-                                        My Bookings
-                                    </p>
+                                    {/* Text */}
+                                    <div className="leading-tight">
+                                        <p className="text-sm font-bold text-white transition-colors duration-200 group-hover:text-red-50">
+                                            My Bookings
+                                        </p>
 
-                                    <p className="mt-0.5 text-[9px] font-medium text-red-100 transition-colors duration-200 group-hover:text-white">
-                                        View your reservations
-                                    </p>
-                                </div>
+                                        <p className="mt-0.5 text-[11px] font-medium text-red-100 transition-colors duration-200 group-hover:text-white">
+                                            View your reservations
+                                        </p>
+                                    </div>
 
-                                {/* Hover indicator */}
-                                <span className="absolute bottom-1.5 left-3 right-3 h-0.5 origin-left scale-x-0 rounded-full bg-white transition-transform duration-200 group-hover:scale-x-100" />
-                            </Link>
+                                    {/* Hover indicator */}
+                                    <span className="absolute bottom-1.5 left-3 right-3 h-0.5 origin-left scale-x-0 rounded-full bg-white transition-transform duration-200 group-hover:scale-x-100" />
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </header>
@@ -109,7 +129,7 @@ export default function Booking({
                     {/* Page intro */}
 
                     {/* Booking workspace */}
-                    <div className="grid min-w-0 gap-3 lg:grid-cols-[190px_minmax(0,1fr)_260px] lg:items-start">
+                    <div className="grid min-w-0 gap-3 lg:grid-cols-[280px_minmax(0,1fr)_260px] lg:items-start">
                         {/* Calendar */}
                         <div className="min-w-0">
                             <DateSelector
@@ -125,15 +145,15 @@ export default function Booking({
                                     </div>
 
                                     <div>
-                                        <p className="text-[9px] font-bold uppercase tracking-wide text-gray-400">
+                                        <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">
                                             Location
                                         </p>
 
-                                        <p className="mt-0.5 text-[10px] font-semibold text-gray-900">
+                                        <p className="mt-0.5 text-[11px] font-semibold text-gray-900">
                                             Court Avenue
                                         </p>
 
-                                        <p className="text-[9px] text-gray-500">
+                                        <p className="text-[11px] text-gray-500">
                                             Pickleball Courts
                                         </p>
                                     </div>
@@ -150,11 +170,11 @@ export default function Booking({
                                             <CalendarDays className="h-5 w-5 text-[#b91c1c]" />
                                         </div>
 
-                                        <p className="mt-3 text-xs font-bold text-gray-900">
+                                        <p className="mt-3 text-md font-bold text-gray-900">
                                             Select a date to begin
                                         </p>
 
-                                        <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+                                        <p className="mt-1 text-[13px] leading-relaxed text-gray-700">
                                             Choose a date from the calendar to
                                             see the available courts and time
                                             slots.
@@ -162,7 +182,7 @@ export default function Booking({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                                <div className="w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                                     {/* ONE scroll area for ALL dates */}
                                     <div className="max-h-[620px] overflow-y-auto">
                                         {selectedDates.map((date) => (
@@ -182,7 +202,7 @@ export default function Booking({
                         </main>
 
                         {/* Summary */}
-                        <aside className="min-w-0 lg:sticky lg:top-4">
+                        <aside className="min-w-0 lg:sticky lg:top-4 ">
                             <BookingSummary
                                 selections={selections}
                                 courts={courts}
@@ -198,7 +218,7 @@ export default function Booking({
                 {/* Bottom info */}
                 <div className="mx-auto w-full max-w-[1400px] px-3 pb-5 sm:px-4 lg:px-5">
                     <div className="flex flex-col gap-1 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-[9px] text-gray-400">
+                        <p className="text-[12px] text-gray-400">
                             Court Avenue · Play more. Book easier. Stay
                             connected.
                         </p>
