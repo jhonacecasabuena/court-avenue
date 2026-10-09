@@ -17,7 +17,7 @@ type Props = {
         date: string,
         timeSlotId: number,
         courtId: number,
-    ) => "available" | "pending" | "confirmed";
+    ) => "available" | "pending" | "confirmed" | "closed";
 };
 
 export default function CourtSchedule({
@@ -184,9 +184,14 @@ export default function CourtSchedule({
                                             court.id,
                                         );
 
+                                        // const unavailable =
+                                        //     status === "pending" ||
+                                        //     status === "confirmed";
+
                                         const unavailable =
                                             status === "pending" ||
-                                            status === "confirmed";
+                                            status === "confirmed" ||
+                                            status === "closed";
 
                                         return (
                                             <td
@@ -211,18 +216,33 @@ export default function CourtSchedule({
                                                             : status ===
                                                                 "pending"
                                                               ? "cursor-not-allowed bg-yellow-50 text-yellow-700"
-                                                              : selected
-                                                                ? "bg-[#b91c1c] text-white tracking-widest"
-                                                                : "bg-green-100 text-green-700 hover:bg-green-300 hover:text-green-900 tracking-widest"
+                                                              : status ===
+                                                                  "closed"
+                                                                ? "cursor-not-allowed bg-gray-200 text-gray-500"
+                                                                : selected
+                                                                  ? "bg-[#b91c1c] text-white tracking-widest"
+                                                                  : "bg-green-100 text-green-700 hover:bg-green-300 hover:text-green-900 tracking-widest"
                                                     }`}
+                                                    // className={`h-9 w-full rounded text-[11px] font-semibold leading-none transition ${
+                                                    //     status === "confirmed"
+                                                    //         ? "cursor-not-allowed bg-gray-100 text-gray-700"
+                                                    //         : status ===
+                                                    //             "pending"
+                                                    //           ? "cursor-not-allowed bg-yellow-50 text-yellow-700"
+                                                    //           : selected
+                                                    //             ? "bg-[#b91c1c] text-white tracking-widest"
+                                                    //             : "bg-green-100 text-green-700 hover:bg-green-300 hover:text-green-900 tracking-widest"
+                                                    // }`}
                                                 >
                                                     {status === "confirmed"
                                                         ? "BOOKED"
                                                         : status === "pending"
                                                           ? "Pending"
-                                                          : selected
-                                                            ? "Selected"
-                                                            : "Available"}
+                                                          : status === "closed"
+                                                            ? "CLOSED"
+                                                            : selected
+                                                              ? "Selected"
+                                                              : "Available"}
                                                 </button>
                                             </td>
                                         );

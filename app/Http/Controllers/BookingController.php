@@ -108,15 +108,17 @@ class BookingController extends Controller
             $booking->expires_at &&
             $booking->expires_at->isPast()
         ) {
-            $booking->update([
-                'status' => 'cancelled',
-                'payment_status' => 'expired',
+            $booking->delete();
+
+            // $request->session()->forget('booking.pending_id');
+
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Your booking session has expired.',
             ]);
 
-            return back()->with(
-                'error',
-                'Your payment window has expired.'
-            );
+            return redirect()
+                ->route('booking.my-bookings');
         }
 
         $path = $request->file('payment_proof')
@@ -128,10 +130,13 @@ class BookingController extends Controller
             'expires_at' => null,
         ]);
 
-        return back()->with(
-            'success',
-            'Payment proof uploaded successfully. Your payment is now awaiting confirmation.'
-        );
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Payment proof uploaded successfully. Your payment is now awaiting confirmation.',
+        ]);
+
+        return redirect()
+            ->route('booking.my-bookings');
     }
 
 
@@ -464,12 +469,14 @@ class BookingController extends Controller
         */
 
         if (! $pendingBookingId) {
+            
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Your booking session has expired.',
+            ]);
+
             return redirect()
-                ->route('booking.index')
-                ->with(
-                    'error',
-                    'Your booking session has expired.'
-                );
+                ->route('booking.index');
         }
 
         $bookingModel = Booking::query()
@@ -488,13 +495,14 @@ class BookingController extends Controller
             $request->session()->forget(
                 'booking.pending_id'
             );
+      
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Your booking session has expired.',
+            ]);
 
             return redirect()
-                ->route('booking.index')
-                ->with(
-                    'error',
-                    'Your booking session has expired.'
-                );
+                ->route('booking.index');
         }
 
         /*
@@ -521,12 +529,15 @@ class BookingController extends Controller
                 'booking.pending_id'
             );
 
+              Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Your payment window expired. Please select your court and time again.',
+            ]);
+
             return redirect()
-                ->route('booking.index')
-                ->with(
-                    'error',
-                    'Your payment window expired. Please select your court and time again.'
-                );
+                ->route('booking.index');
+
+ 
         }
 
         /*
@@ -570,6 +581,11 @@ class BookingController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Booking details loaded successfully. You can now upload your payment proof.',
+        ]);
+
         return Inertia::render(
             'court_avenue/booking/checkout',
             [
@@ -579,6 +595,9 @@ class BookingController extends Controller
 
                     'booking_reference' =>
                         $bookingModel->booking_reference,
+
+                    'created_at' =>
+                        $bookingModel->created_at?->toISOString(),
 
                     'status' =>
                         $bookingModel->status,
@@ -601,6 +620,7 @@ class BookingController extends Controller
                     'selections' =>
                         $selections,
                 ],
+                
             ]
         );
     }
@@ -614,12 +634,14 @@ class BookingController extends Controller
         );
 
         if (! $pendingBookingId) {
+
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Your booking session has expired.',
+            ]);
+
             return redirect()
-                ->route('booking.index')
-                ->with(
-                    'error',
-                    'Your booking session has expired.'
-                );
+                ->route('booking.index');
         }
 
         $user = $request->user();
@@ -638,7 +660,7 @@ class BookingController extends Controller
             'payment_proof' => [
                 'required',
                 'image',
-                'mimes:jpg,jpeg,png',
+                'mimes:jpg,jpeg,png,webp',
                 'max:5120',
             ],
         ]);
@@ -664,12 +686,14 @@ class BookingController extends Controller
                 'booking.pending_id'
             );
 
+
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Your booking could not be found.',
+            ]);
+
             return redirect()
-                ->route('booking.index')
-                ->with(
-                    'error',
-                    'Your booking could not be found.'
-                );
+                ->route('booking.index');
         }
 
         /*
@@ -683,21 +707,30 @@ class BookingController extends Controller
             $booking->expires_at &&
             $booking->expires_at->isPast()
         ) {
-            $booking->update([
-                'status' => 'cancelled',
-                'payment_status' => 'expired',
-            ]);
+            // $booking->update([
+            //     'status' => 'cancelled',
+            //     'payment_status' => 'expired',
+            // ]);
+
+            // $request->session()->forget(
+            //     'booking.pending_id'
+            // );
+
+            $booking->delete();
 
             $request->session()->forget(
                 'booking.pending_id'
             );
 
+            
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Your 8-minute payment window has expired. Please select your court and time again.',
+            ]);
+
             return redirect()
-                ->route('booking.index')
-                ->with(
-                    'error',
-                    'Your 8-minute payment window has expired. Please select your court and time again.'
-                );
+                ->route('booking.index');
+
         }
 
         /*
@@ -787,12 +820,14 @@ class BookingController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Booking submitted! Awaiting payment verification and confirmation',
+        ]);
+
         return redirect()
-            ->route('booking.my-bookings')
-            ->with(
-                'success',
-                'Your booking and payment proof have been submitted. Your payment is awaiting confirmation.'
-            );
+            ->route('booking.my-bookings');
     }
 
 

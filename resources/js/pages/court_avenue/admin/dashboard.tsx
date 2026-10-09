@@ -1,4 +1,5 @@
 import { Head, usePage } from "@inertiajs/react";
+import { useEffect, useRef, useState } from "react";
 import {
     ArrowUpRight,
     CalendarDays,

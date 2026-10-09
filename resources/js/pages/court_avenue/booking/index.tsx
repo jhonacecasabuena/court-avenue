@@ -5,6 +5,7 @@ import {
     CalendarDays,
     CheckCircle2,
     ClipboardList,
+    Info,
     MapPin,
     ShieldCheck,
 } from "lucide-react";
@@ -184,6 +185,22 @@ export default function Booking({
                             ) : (
                                 <div className="w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                                     {/* ONE scroll area for ALL dates */}
+                                    {selectedDates.length > 1 && (
+                                        <div className="flex items-start gap-2 border-b border-red-100 bg-red-50 px-4 py-3">
+                                            <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#b91c1c]" />
+
+                                            <p className="text-xs leading-relaxed text-gray-700 sm:text-sm">
+                                                You have selected{" "}
+                                                <span className="font-semibold text-[#b91c1c]">
+                                                    {selectedDates.length} dates
+                                                </span>
+                                                . Scroll down to view each
+                                                date's court schedule and select
+                                                your preferred time slots.
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <div className="max-h-[620px] overflow-y-auto">
                                         {selectedDates.map((date) => (
                                             <CourtSchedule

@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { ArrowRight } from 'lucide-react';
+import { Link } from "@inertiajs/react";
+import { ArrowRight } from "lucide-react";
 
 export default function CTA() {
     return (

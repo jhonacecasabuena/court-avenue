@@ -1,13 +1,15 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     ArrowLeft,
     CalendarDays,
     CheckCircle2,
+    Clock,
     Clock3,
     CreditCard,
     MapPin,
     Receipt,
+    ReceiptText,
     XCircle,
 } from "lucide-react";
 
@@ -201,6 +203,17 @@ export default function MyBookings({ bookings }: Props) {
         null,
     );
     const [paymentProof, setPaymentProof] = useState<File | null>(null);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ["bookedSlots"],
+            });
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <>
             <Head title="My Bookings | Court Avenue" />
@@ -230,15 +243,10 @@ export default function MyBookings({ bookings }: Props) {
                 {/* Main */}
                 <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
                     {/* Page heading */}
-                    <div className="mb-4 sm:mb-6">
-                        <h3 className="text-xl font-black tracking-tight text-neutral-900 sm:text-2xl">
+                    <div className="mb-2 sm:mb-6">
+                        <h6 className="text-lg font-black tracking-tight text-neutral-900 sm:text-2xl">
                             My Bookings
-                        </h3>
-
-                        <p className="mt-2 text-sm text-neutral-500">
-                            View your court reservations and payment
-                            transactions.
-                        </p>
+                        </h6>
                     </div>
 
                     {bookings.length === 0 ? (
@@ -283,34 +291,47 @@ export default function MyBookings({ bookings }: Props) {
                                             {/* Booking header */}
                                             <div className="flex flex-col gap-4 border-b border-neutral-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                                                 <div>
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <Receipt
-                                                            size={17}
-                                                            className="text-[#b0002a]"
-                                                        />
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="flex min-w-0 items-start gap-3">
+                                                            <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] ring-1 ring-inset ring-red-100">
+                                                                <ReceiptText className="h-5 w-5" />
+                                                            </div>
 
-                                                        <span className="text-sm tracking-wider font-bold text-neutral-900">
-                                                            {
-                                                                booking.booking_reference
-                                                            }
-                                                        </span>
+                                                            <div className="min-w-0">
+                                                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-700">
+                                                                    Booking
+                                                                    Reference
+                                                                </p>
 
-                                                        <span
-                                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] uppercase font-bold ${status.className}`}
-                                                        >
-                                                            <StatusIcon
-                                                                size={13}
-                                                            />
-                                                            {status.label}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        navigator.clipboard.writeText(
+                                                                            booking.booking_reference,
+                                                                        )
+                                                                    }
+                                                                    title="Click to copy booking reference"
+                                                                    className="mt-1 block break-all text-left text-[14px] font-extrabold tracking-wider text-[#b91c1c] transition hover:text-red-800 hover:underline"
+                                                                >
+                                                                    {
+                                                                        booking.booking_reference
+                                                                    }
+                                                                </button>
+
+                                                                <p className="mt-1 text-xs text-neutral-800">
+                                                                    Booked on{" "}
+                                                                    {formatDateTime(
+                                                                        booking.created_at,
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <span className="shrink-0 rounded-full bg-yellow-50 px-2.5 py-1 text-[10px] font-bold text-yellow-700 ring-1 ring-inset ring-yellow-200">
+                                                            <Clock className="mr-1 inline h-3 w-3" />
+                                                            Pending
                                                         </span>
                                                     </div>
-
-                                                    <p className="mt-1 text-xs text-neutral-800">
-                                                        Booked on{" "}
-                                                        {formatDateTime(
-                                                            booking.created_at,
-                                                        )}
-                                                    </p>
                                                 </div>
                                             </div>
 
