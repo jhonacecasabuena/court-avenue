@@ -20,6 +20,7 @@ type AuthUser = {
     id: number;
     name: string;
     email: string;
+    role?: string;
 };
 
 type PageProps = {
@@ -40,6 +41,8 @@ export default function Booking({
     bookedSlots,
 }: BookingPageProps) {
     const { auth } = usePage<PageProps>().props;
+
+    const backUrl = auth.user?.role === "admin" ? "/admin/dashboard" : "/";
 
     const {
         selectedDates,
@@ -72,7 +75,7 @@ export default function Booking({
                     <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between px-3 sm:px-4 lg:px-5">
                         <div className="flex items-center gap-3">
                             <Link
-                                href="/"
+                                href={backUrl}
                                 className="group flex items-center gap-3 rounded-lg px-1.5 py-1 transition hover:bg-white/10"
                             >
                                 {/* Back icon */}

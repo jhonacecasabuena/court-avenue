@@ -45,13 +45,13 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: "Bookings",
-        href: "/admin/bookings",
+        href: "/booking",
         icon: CalendarDays,
     },
     {
-        title: "Courts",
-        href: "/admin/courts",
-        icon: MapPin,
+        title: "Support",
+        href: "/support/inbox",
+        icon: CircleHelp,
     },
     {
         title: "Users",
@@ -63,11 +63,11 @@ const mainNavItems: NavItem[] = [
         href: "/admin/tournaments",
         icon: Trophy,
     },
-    {
-        title: "Support",
-        href: "/support/inbox",
-        icon: CircleHelp,
-    },
+    // {
+    //     title: "Courts",
+    //     href: "/admin/courts",
+    //     icon: MapPin,
+    // },
 ];
 
 export function AppSidebar() {

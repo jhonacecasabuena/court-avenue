@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CourtAvenueController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SupportController;
 use App\Models\SupportConversation;
 use Illuminate\Support\Facades\Route;
@@ -45,11 +46,10 @@ Route::get('/booking/checkout', [
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
-    Route::get('/admin/dashboard', function () {
-        return Inertia::render(
-            'court_avenue/admin/dashboard'
-        );
-    })->name('admin.dashboard');
+    Route::get('/admin/dashboard', [
+    AdminController::class,
+    'index',
+])->name('admin.dashboard');
 });
 
 
