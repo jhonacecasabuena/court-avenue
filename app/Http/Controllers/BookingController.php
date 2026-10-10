@@ -945,4 +945,39 @@ class BookingController extends Controller
     }
 
 
+
+    // Admin: Reject a booking because of invalid payment proof
+    public function rejectAdmin(Request $request, Booking $booking)
+    {
+        // Only admins can reject bookings.
+        abort_unless(
+            $request->user()->hasRole('admin'),
+            403
+        );
+
+        if (
+            $booking->status !== 'pending' ||
+            $booking->payment_status !== 'awaiting_confirmation' ||
+            !$booking->payment_proof
+        ) {
+
+             Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'This booking cannot be rejected. Verify its current status and payment proof.',
+            ]);
+
+            return redirect()->route('booking.my-bookings');
+        }
+
+        $booking->delete();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Booking cancelled successfully.',
+        ]);
+
+        return redirect()->route('booking.my-bookings');
+    }
+
+
 }

@@ -7,8 +7,10 @@ import {
     ChevronDown,
     Clock,
     Clock3,
+    Copy,
     CreditCard,
     LogOut,
+    Mail,
     MapPin,
     Menu,
     Receipt,
@@ -16,6 +18,7 @@ import {
     Search,
     Settings,
     Settings2,
+    UserRound,
     XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -279,16 +282,13 @@ export default function MyBookings({ bookings }: Props) {
     const isAdmin = auth.user?.role === "admin";
 
     const filteredBookings = bookings.filter((booking) => {
-        // Regular users only see the bookings returned for them.
-        // Admins can filter all returned bookings.
-        if (isAdmin && bookingFilter !== "all") {
-            if (booking.status !== bookingFilter) {
-                return false;
-            }
+        // Filter by booking status for both admin and user.
+        if (bookingFilter !== "all" && booking.status !== bookingFilter) {
+            return false;
         }
 
-        // Search is admin-only.
-        if (!isAdmin || !bookingSearch.trim()) {
+        // Search bookings for both admin and user.
+        if (!bookingSearch.trim()) {
             return true;
         }
 
@@ -297,7 +297,10 @@ export default function MyBookings({ bookings }: Props) {
         return (
             booking.booking_reference?.toLowerCase().includes(search) ||
             booking.user?.name?.toLowerCase().includes(search) ||
-            booking.user?.email?.toLowerCase().includes(search)
+            booking.user?.email?.toLowerCase().includes(search) ||
+            booking.items?.some((item) =>
+                item.court?.name?.toLowerCase().includes(search),
+            )
         );
     });
 
@@ -556,113 +559,111 @@ export default function MyBookings({ bookings }: Props) {
 
                 {/* Main */}
                 <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-                    {/* Page heading */}
-                    {!isAdmin && (
-                        <div className="mb-2 sm:mb-6">
-                            <h6 className="text-lg font-black tracking-tight text-neutral-900 sm:text-2xl">
-                                My Bookings
-                            </h6>
-                        </div>
-                    )}
-
                     {/* Admin Booking Filters */}
-                    {isAdmin && (
-                        <div className="mb-3 rounded-xl border border-neutral-200 bg-white p-2.5 shadow-sm sm:mb-5 sm:rounded-2xl sm:p-4">
-                            <div className="mb-2 sm:mb-3">
-                                <h2 className="text-xs font-bold text-neutral-900 sm:text-sm">
-                                    Manage Bookings
-                                </h2>
+                    {/* Booking Filters — Admin and User */}
+                    <div className="mb-3 rounded-xl border border-neutral-200 bg-white p-2.5 shadow-sm sm:mb-5 sm:rounded-2xl sm:p-4">
+                        <div className="mb-2 sm:mb-3">
+                            <h2 className="text-xs font-bold text-neutral-900 sm:text-sm">
+                                {isAdmin
+                                    ? "Manage Bookings"
+                                    : "Find My Bookings"}
+                            </h2>
 
-                                <p className="mt-0.5 text-[10px] text-neutral-500 sm:mt-1 sm:text-xs">
-                                    Filter transactions by booking status.
-                                </p>
-                            </div>
+                            <p className="mt-0.5 text-[10px] text-neutral-500 sm:mt-1 sm:text-xs">
+                                {isAdmin
+                                    ? "Search and filter transactions by booking status."
+                                    : "Search your reservations or filter them by booking status."}
+                            </p>
+                        </div>
 
-                            {/* Search Bookings */}
+                        {/* Booking Status Filters */}
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                            {(
+                                [
+                                    {
+                                        label: "All Bookings",
+                                        value: "all",
+                                        count: bookings.length,
+                                    },
+                                    {
+                                        label: "Pending",
+                                        value: "pending",
+                                        count: pendingCount,
+                                    },
+                                    {
+                                        label: "Confirmed",
+                                        value: "confirmed",
+                                        count: confirmedCount,
+                                    },
+                                ] as const
+                            ).map((filter) => {
+                                const active = bookingFilter === filter.value;
 
-                            <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                                {(
-                                    [
-                                        {
-                                            label: "All Bookings",
-                                            value: "all",
-                                            count: bookings.length,
-                                        },
-                                        {
-                                            label: "Pending",
-                                            value: "pending",
-                                            count: pendingCount,
-                                        },
-                                        {
-                                            label: "Confirmed",
-                                            value: "confirmed",
-                                            count: confirmedCount,
-                                        },
-                                    ] as const
-                                ).map((filter) => {
-                                    const active =
-                                        bookingFilter === filter.value;
+                                return (
+                                    <button
+                                        key={filter.value}
+                                        type="button"
+                                        onClick={() =>
+                                            setBookingFilter(filter.value)
+                                        }
+                                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                                            active
+                                                ? "border-[#b91c1c] bg-[#b91c1c] text-white shadow-sm"
+                                                : "border-neutral-200 bg-white text-neutral-600 hover:border-red-200 hover:bg-red-50 hover:text-[#b91c1c]"
+                                        }`}
+                                    >
+                                        {filter.label}
 
-                                    return (
-                                        <button
-                                            key={filter.value}
-                                            type="button"
-                                            onClick={() =>
-                                                setBookingFilter(filter.value)
-                                            }
-                                            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                                        <span
+                                            className={`rounded-full px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] ${
                                                 active
-                                                    ? "border-[#b91c1c] bg-[#b91c1c] text-white shadow-sm"
-                                                    : "border-neutral-200 bg-white text-neutral-600 hover:border-red-200 hover:bg-red-50 hover:text-[#b91c1c]"
+                                                    ? "bg-white/20 text-white"
+                                                    : "bg-neutral-100 text-neutral-600"
                                             }`}
                                         >
-                                            {filter.label}
+                                            {filter.count}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-                                            <span
-                                                className={`rounded-full px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] ${
-                                                    active
-                                                        ? "bg-white/20 text-white"
-                                                        : "bg-neutral-100 text-neutral-600"
-                                                }`}
-                                            >
-                                                {filter.count}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <div className="mb-2.5 sm:mb-3 sm:mt-2 mt-2">
-                                <div className="relative">
-                                    <Search
-                                        size={16}
-                                        className="absolute top-1/2 left-3 -translate-y-1/2 text-neutral-400"
-                                    />
+                        {/* Search Bookings */}
+                        <div className="mt-2.5 sm:mt-3">
+                            <div className="relative">
+                                <Search
+                                    size={16}
+                                    className="absolute top-1/2 left-3 -translate-y-1/2 text-neutral-400"
+                                />
 
-                                    <input
-                                        type="text"
-                                        value={bookingSearch}
-                                        onChange={(event) =>
-                                            setBookingSearch(event.target.value)
-                                        }
-                                        placeholder="Search name, email, or booking reference..."
-                                        aria-label="Search bookings by user name, email, or booking reference"
-                                        className="h-9 w-full rounded-lg border border-neutral-200 bg-white pr-10 pl-9 text-xs text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#b91c1c] focus:ring-2 focus:ring-red-100 sm:h-10 sm:rounded-xl sm:text-sm"
-                                    />
+                                <input
+                                    type="text"
+                                    value={bookingSearch}
+                                    onChange={(event) =>
+                                        setBookingSearch(event.target.value)
+                                    }
+                                    placeholder={
+                                        isAdmin
+                                            ? "Search name, email, reference, or court..."
+                                            : "Search booking reference or court..."
+                                    }
+                                    aria-label="Search bookings"
+                                    className="h-9 w-full rounded-lg border border-neutral-200 bg-white pr-10 pl-9 text-xs text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#b91c1c] focus:ring-2 focus:ring-red-100 sm:h-10 sm:rounded-xl sm:text-sm"
+                                />
 
-                                    {bookingSearch && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setBookingSearch("")}
-                                            aria-label="Clear booking search"
-                                            className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-400 transition hover:text-[#b91c1c]"
-                                        >
-                                            <XCircle size={16} />
-                                        </button>
-                                    )}
-                                </div>
+                                {bookingSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setBookingSearch("")}
+                                        aria-label="Clear booking search"
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-400 transition hover:text-[#b91c1c]"
+                                    >
+                                        <XCircle size={16} />
+                                    </button>
+                                )}
                             </div>
                         </div>
-                    )}
+                    </div>
 
                     {filteredBookings.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
@@ -715,16 +716,20 @@ export default function MyBookings({ bookings }: Props) {
                                             className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
                                         >
                                             {/* Booking header */}
-                                            <div className="flex flex-col gap-4 border-b border-neutral-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                                                <div>
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <div className="flex min-w-0 items-start gap-3">
-                                                            <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] ring-1 ring-inset ring-red-100">
-                                                                <ReceiptText className="h-5 w-5" />
-                                                            </div>
+                                            <div className="border-b border-neutral-100 bg-white px-4 py-4 sm:px-6">
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                                    {/* Booking Details */}
+                                                    <div className="flex min-w-0 items-start gap-3">
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] ring-1 ring-inset ring-red-100">
+                                                            <ReceiptText
+                                                                size={19}
+                                                            />
+                                                        </div>
 
-                                                            <div className="min-w-0">
-                                                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-700">
+                                                        <div className="min-w-0 flex-1">
+                                                            {/* Reference */}
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
                                                                     Booking
                                                                     Reference
                                                                 </p>
@@ -737,24 +742,67 @@ export default function MyBookings({ bookings }: Props) {
                                                                         )
                                                                     }
                                                                     title="Click to copy booking reference"
-                                                                    className="mt-1 block break-all text-left text-[14px] font-extrabold tracking-wider text-[#b91c1c] transition hover:text-red-800 hover:underline"
+                                                                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-400 transition hover:text-[#b91c1c]"
                                                                 >
-                                                                    {
-                                                                        booking.booking_reference
-                                                                    }
+                                                                    <Copy
+                                                                        size={
+                                                                            11
+                                                                        }
+                                                                    />
+                                                                    Copy
                                                                 </button>
+                                                            </div>
 
-                                                                <p className="mt-1 text-xs text-neutral-800">
+                                                            <p className="mt-1 break-all text-sm font-extrabold tracking-wide text-[#b91c1c]">
+                                                                {
+                                                                    booking.booking_reference
+                                                                }
+                                                            </p>
+
+                                                            {/* Booking Date */}
+                                                            <div className="mt-3 flex items-center gap-1.5 text-[11px] text-neutral-500">
+                                                                <span>
                                                                     Booked on{" "}
                                                                     {formatDateTime(
                                                                         booking.created_at,
                                                                     )}
-                                                                </p>
+                                                                </span>
+                                                            </div>
+                                                            {/* Booked By */}
+                                                            <div className=" flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                                                                <span className="text-[10px] font-bold tracking-wider text-neutral-400">
+                                                                    Booked By
+                                                                </span>
+
+                                                                <span className="text-xs font-semibold text-neutral-800">
+                                                                    {booking
+                                                                        .user
+                                                                        ?.name ??
+                                                                        "Unknown Booker"}
+                                                                </span>
+
+                                                                <span className="hidden text-neutral-300 sm:inline">
+                                                                    ·
+                                                                </span>
+
+                                                                <span className="break-all text-xs text-neutral-500">
+                                                                    {booking
+                                                                        .user
+                                                                        ?.email ??
+                                                                        "Email unavailable"}
+                                                                </span>
                                                             </div>
                                                         </div>
+                                                    </div>
+
+                                                    {/* Booking Status */}
+                                                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 sm:hidden">
+                                                            Booking Status
+                                                        </span>
 
                                                         <span
-                                                            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset ${
+                                                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold ring-1 ring-inset ${
                                                                 status.className
                                                             } ${
                                                                 booking.status ===
@@ -766,7 +814,9 @@ export default function MyBookings({ bookings }: Props) {
                                                                       : "ring-red-200"
                                                             }`}
                                                         >
-                                                            <StatusIcon className="h-3 w-3" />
+                                                            <StatusIcon
+                                                                size={12}
+                                                            />
                                                             {status.label}
                                                         </span>
                                                     </div>
@@ -995,7 +1045,7 @@ export default function MyBookings({ bookings }: Props) {
                                                                             }
 
                                                                             router.delete(
-                                                                                `/admin/bookings/${booking.id}/reject`,
+                                                                                `/booking/my-bookings/${booking.id}/reject`,
                                                                                 {
                                                                                     preserveScroll: true,
                                                                                 },

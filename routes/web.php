@@ -50,6 +50,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     AdminController::class,
     'index',
 ])->name('admin.dashboard');
+
+
 });
 
 
@@ -85,6 +87,11 @@ Route::middleware('auth')->group(function () {
         '/booking/my-bookings/{booking}/cancel',
         [BookingController::class, 'cancel']
         )->name('booking.cancel');
+
+         Route::delete(
+         '/booking/my-bookings/{booking}/reject',
+        [BookingController::class, 'rejectAdmin']
+    )->name('bookings.adminCancel');
 
 
       Route::post('/booking/confirm', [
