@@ -1,17 +1,37 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import {
     ArrowLeft,
     CalendarDays,
     CheckCircle2,
+    ChevronDown,
     Clock,
     Clock3,
     CreditCard,
+    LogOut,
     MapPin,
+    Menu,
     Receipt,
     ReceiptText,
+    Search,
+    Settings,
+    Settings2,
     XCircle,
 } from "lucide-react";
+import { toast } from "sonner";
+
+type AuthUser = {
+    id: number;
+    name: string;
+    email: string;
+    role?: string;
+};
+
+type PageProps = {
+    auth: {
+        user: AuthUser | null;
+    };
+};
 
 type Court = {
     id: number;
@@ -35,6 +55,11 @@ type BookingItem = {
 type Booking = {
     id: number;
     booking_reference: string;
+    user?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
     subtotal: number | string;
     service_fee: number | string;
     total: number | string;
@@ -57,6 +82,8 @@ type Booking = {
 type Props = {
     bookings: Booking[];
 };
+
+type BookingFilter = "all" | "pending" | "confirmed";
 
 const formatDate = (date: string | null | undefined) => {
     if (!date) return "—";
@@ -197,22 +224,90 @@ const getPaymentStatus = (booking: Booking) => {
     };
 };
 
+//admin
+
 export default function MyBookings({ bookings }: Props) {
+    const { auth } = usePage<PageProps>().props;
+    const [open, setOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const closeMenu = () => {
+        setOpen(false);
+        setUserMenuOpen(false);
+    };
+
+    const backUrl = auth.user?.role === "admin" ? "/admin/dashboard" : "/";
+
     const [selectedProof, setSelectedProof] = useState<string | null>(null);
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(
         null,
     );
     const [paymentProof, setPaymentProof] = useState<File | null>(null);
 
+    const [bookingSearch, setBookingSearch] = useState("");
+    const [bookingFilter, setBookingFilter] = useState<BookingFilter>("all");
+    const [viewedProofs, setViewedProofs] = useState<number[]>([]);
+
     useEffect(() => {
         const interval = setInterval(() => {
             router.reload({
-                only: ["bookedSlots"],
+                only: ["bookings"],
             });
         }, 10000);
 
         return () => clearInterval(interval);
     }, []);
+
+    const handleLogout = () => {
+        closeMenu();
+
+        router.post(
+            "/logout",
+            {},
+            {
+                onSuccess: () => {
+                    toast.success("Logged out successfully", {
+                        description:
+                            "You have been safely signed out of your account.",
+                    });
+                },
+            },
+        );
+    };
+
+    const isAdmin = auth.user?.role === "admin";
+
+    const filteredBookings = bookings.filter((booking) => {
+        // Regular users only see the bookings returned for them.
+        // Admins can filter all returned bookings.
+        if (isAdmin && bookingFilter !== "all") {
+            if (booking.status !== bookingFilter) {
+                return false;
+            }
+        }
+
+        // Search is admin-only.
+        if (!isAdmin || !bookingSearch.trim()) {
+            return true;
+        }
+
+        const search = bookingSearch.trim().toLowerCase();
+
+        return (
+            booking.booking_reference?.toLowerCase().includes(search) ||
+            booking.user?.name?.toLowerCase().includes(search) ||
+            booking.user?.email?.toLowerCase().includes(search)
+        );
+    });
+
+    const pendingCount = bookings.filter(
+        (booking) => booking.status === "pending",
+    ).length;
+
+    const confirmedCount = bookings.filter(
+        (booking) => booking.status === "confirmed",
+    ).length;
 
     return (
         <>
@@ -220,48 +315,377 @@ export default function MyBookings({ bookings }: Props) {
 
             <div className="min-h-screen bg-neutral-50">
                 {/* Header */}
-                <header className="border-b border-neutral-200 bg-white">
-                    <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/95 shadow-sm backdrop-blur-md">
+                    <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+                        {/* Logo */}
                         <Link
-                            href="/"
-                            className="flex items-center gap-3 text-sm font-semibold text-neutral-700 transition hover:text-[#b0002a]"
+                            href={backUrl}
+                            onClick={closeMenu}
+                            className="group flex shrink-0 items-center"
                         >
-                            <ArrowLeft size={18} />
-                            Back to Court Avenue
+                            <img
+                                src="/logo.jpg"
+                                alt="Court Avenue"
+                                className="w-[90px] transition-opacity duration-200 group-hover:opacity-80 sm:w-[90px]"
+                            />
                         </Link>
 
-                        <Link
-                            href="/booking"
-                            className="inline-flex items-center gap-2 rounded-full bg-[#b0002a] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#920024]"
-                        >
-                            <CalendarDays size={16} />
-                            Book a Court
-                        </Link>
+                        {/* Navigation Options Menu */}
+                        <div className="relative">
+                            {auth.user?.role === "admin" ? (
+                                /* Admin Options Menu */
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setMenuOpen((prev) => !prev)
+                                        }
+                                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-[#b0002a]"
+                                    >
+                                        <Settings2 className="h-5 w-5" />
+                                        <ChevronDown
+                                            size={16}
+                                            className={`transition-transform duration-200 ${
+                                                menuOpen ? "rotate-180" : ""
+                                            }`}
+                                        />
+                                    </button>
+
+                                    {menuOpen && (
+                                        <>
+                                            {/* Click Outside to Close */}
+                                            <button
+                                                type="button"
+                                                aria-label="Close options menu"
+                                                className="fixed inset-0 z-40 cursor-default"
+                                                onClick={() =>
+                                                    setMenuOpen(false)
+                                                }
+                                            />
+
+                                            {/* Popup Menu */}
+                                            <div className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-neutral-200 bg-white p-2 shadow-xl">
+                                                {/* Dashboard */}
+                                                <Link
+                                                    href={backUrl}
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-neutral-700 transition hover:bg-red-50 hover:text-[#b0002a]"
+                                                >
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 transition group-hover:bg-red-100 group-hover:text-[#b0002a]">
+                                                        <ArrowLeft size={18} />
+                                                    </div>
+
+                                                    <div>
+                                                        <p className="font-semibold">
+                                                            Dashboard
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Return to dashboard
+                                                        </p>
+                                                    </div>
+                                                </Link>
+
+                                                {/* Book Walk-In */}
+                                                <Link
+                                                    href="/booking"
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-neutral-700 transition hover:bg-red-50 hover:text-[#b0002a]"
+                                                >
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b0002a] transition group-hover:bg-red-100">
+                                                        <CalendarDays
+                                                            size={18}
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <p className="font-semibold">
+                                                            Book Walk-In
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Create a reservation
+                                                        </p>
+                                                    </div>
+                                                </Link>
+                                                {/* Divider */}
+                                                <div className="my-2 border-t border-neutral-100" />
+
+                                                {/* Logout */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        handleLogout();
+                                                    }}
+                                                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500 transition-colors group-hover:bg-red-100 group-hover:text-[#b0002a]">
+                                                        <LogOut size={19} />
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-neutral-700 transition-colors group-hover:text-[#b0002a]">
+                                                            Log Out
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Sign out of your
+                                                            account
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                /* User and Guest Button */
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setMenuOpen((prev) => !prev)
+                                        }
+                                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-[#b0002a]"
+                                    >
+                                        <Settings className="h-5 w-5" />
+                                        <ChevronDown
+                                            size={16}
+                                            className={`transition-transform duration-200 ${
+                                                menuOpen ? "rotate-180" : ""
+                                            }`}
+                                        />
+                                    </button>
+
+                                    {menuOpen && (
+                                        <>
+                                            {/* Click Outside to Close */}
+                                            <button
+                                                type="button"
+                                                aria-label="Close options menu"
+                                                className="fixed inset-0 z-40 cursor-default"
+                                                onClick={() =>
+                                                    setMenuOpen(false)
+                                                }
+                                            />
+
+                                            {/* Popup Menu */}
+                                            <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl shadow-neutral-900/10">
+                                                {/* Home */}
+                                                <Link
+                                                    href={backUrl}
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600 transition-colors group-hover:bg-red-100 group-hover:text-[#b0002a]">
+                                                        <ArrowLeft size={19} />
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-neutral-800 transition-colors group-hover:text-[#b0002a]">
+                                                            Home
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Return to Home
+                                                        </p>
+                                                    </div>
+                                                </Link>
+
+                                                {/* Book a Court */}
+                                                <Link
+                                                    href="/booking"
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b0002a] transition-colors group-hover:bg-[#b0002a] group-hover:text-white">
+                                                        <CalendarDays
+                                                            size={19}
+                                                        />
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-neutral-800 transition-colors group-hover:text-[#b0002a]">
+                                                            Book a Court
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Create a reservation
+                                                        </p>
+                                                    </div>
+                                                </Link>
+
+                                                {/* Divider */}
+                                                <div className="my-2 border-t border-neutral-100" />
+
+                                                {/* Logout */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        handleLogout();
+                                                    }}
+                                                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500 transition-colors group-hover:bg-red-100 group-hover:text-[#b0002a]">
+                                                        <LogOut size={19} />
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-neutral-700 transition-colors group-hover:text-[#b0002a]">
+                                                            Log Out
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Sign out of your
+                                                            account
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 
                 {/* Main */}
                 <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
                     {/* Page heading */}
-                    <div className="mb-2 sm:mb-6">
-                        <h6 className="text-lg font-black tracking-tight text-neutral-900 sm:text-2xl">
-                            My Bookings
-                        </h6>
-                    </div>
+                    {!isAdmin && (
+                        <div className="mb-2 sm:mb-6">
+                            <h6 className="text-lg font-black tracking-tight text-neutral-900 sm:text-2xl">
+                                My Bookings
+                            </h6>
+                        </div>
+                    )}
 
-                    {bookings.length === 0 ? (
+                    {/* Admin Booking Filters */}
+                    {isAdmin && (
+                        <div className="mb-3 rounded-xl border border-neutral-200 bg-white p-2.5 shadow-sm sm:mb-5 sm:rounded-2xl sm:p-4">
+                            <div className="mb-2 sm:mb-3">
+                                <h2 className="text-xs font-bold text-neutral-900 sm:text-sm">
+                                    Manage Bookings
+                                </h2>
+
+                                <p className="mt-0.5 text-[10px] text-neutral-500 sm:mt-1 sm:text-xs">
+                                    Filter transactions by booking status.
+                                </p>
+                            </div>
+
+                            {/* Search Bookings */}
+
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                                {(
+                                    [
+                                        {
+                                            label: "All Bookings",
+                                            value: "all",
+                                            count: bookings.length,
+                                        },
+                                        {
+                                            label: "Pending",
+                                            value: "pending",
+                                            count: pendingCount,
+                                        },
+                                        {
+                                            label: "Confirmed",
+                                            value: "confirmed",
+                                            count: confirmedCount,
+                                        },
+                                    ] as const
+                                ).map((filter) => {
+                                    const active =
+                                        bookingFilter === filter.value;
+
+                                    return (
+                                        <button
+                                            key={filter.value}
+                                            type="button"
+                                            onClick={() =>
+                                                setBookingFilter(filter.value)
+                                            }
+                                            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-xs ${
+                                                active
+                                                    ? "border-[#b91c1c] bg-[#b91c1c] text-white shadow-sm"
+                                                    : "border-neutral-200 bg-white text-neutral-600 hover:border-red-200 hover:bg-red-50 hover:text-[#b91c1c]"
+                                            }`}
+                                        >
+                                            {filter.label}
+
+                                            <span
+                                                className={`rounded-full px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] ${
+                                                    active
+                                                        ? "bg-white/20 text-white"
+                                                        : "bg-neutral-100 text-neutral-600"
+                                                }`}
+                                            >
+                                                {filter.count}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="mb-2.5 sm:mb-3 sm:mt-2 mt-2">
+                                <div className="relative">
+                                    <Search
+                                        size={16}
+                                        className="absolute top-1/2 left-3 -translate-y-1/2 text-neutral-400"
+                                    />
+
+                                    <input
+                                        type="text"
+                                        value={bookingSearch}
+                                        onChange={(event) =>
+                                            setBookingSearch(event.target.value)
+                                        }
+                                        placeholder="Search name, email, or booking reference..."
+                                        aria-label="Search bookings by user name, email, or booking reference"
+                                        className="h-9 w-full rounded-lg border border-neutral-200 bg-white pr-10 pl-9 text-xs text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#b91c1c] focus:ring-2 focus:ring-red-100 sm:h-10 sm:rounded-xl sm:text-sm"
+                                    />
+
+                                    {bookingSearch && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setBookingSearch("")}
+                                            aria-label="Clear booking search"
+                                            className="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-400 transition hover:text-[#b91c1c]"
+                                        >
+                                            <XCircle size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {filteredBookings.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-16 text-center">
                             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-[#b0002a]">
                                 <CalendarDays size={25} />
                             </div>
 
                             <h2 className="mt-5 text-lg font-bold text-neutral-900">
-                                No bookings yet
+                                {isAdmin && bookingSearch.trim()
+                                    ? "No matching bookings"
+                                    : isAdmin && bookingFilter !== "all"
+                                      ? `No ${bookingFilter} bookings`
+                                      : "No bookings yet"}
                             </h2>
 
                             <p className="mx-auto mt-2 max-w-md text-sm text-neutral-500">
-                                You don't have any court reservations yet. Find
-                                an available court and make your first booking.
+                                {isAdmin && bookingSearch.trim()
+                                    ? "No bookings match your search. Try a different name, email, or booking reference."
+                                    : isAdmin && bookingFilter !== "all"
+                                      ? `There are currently no ${bookingFilter} bookings to display.`
+                                      : isAdmin
+                                        ? "No booking transactions have been made."
+                                        : "You don't have any court reservations yet. Find an available court and make your first booking."}
                             </p>
 
                             <Link
@@ -269,13 +693,15 @@ export default function MyBookings({ bookings }: Props) {
                                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#b0002a] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#920024]"
                             >
                                 <CalendarDays size={17} />
-                                Book a Court
+                                {auth.user?.role === "admin"
+                                    ? "Book Walk-in"
+                                    : "Book a Court"}
                             </Link>
                         </div>
                     ) : (
                         <div className="max-h-[calc(100vh-230px)] overflow-y-auto pr-2">
                             <div className="space-y-5">
-                                {bookings.map((booking) => {
+                                {filteredBookings.map((booking) => {
                                     const status = getStatus(booking);
                                     const StatusIcon = status.icon;
 
@@ -327,9 +753,21 @@ export default function MyBookings({ bookings }: Props) {
                                                             </div>
                                                         </div>
 
-                                                        <span className="shrink-0 rounded-full bg-yellow-50 px-2.5 py-1 text-[10px] font-bold text-yellow-700 ring-1 ring-inset ring-yellow-200">
-                                                            <Clock className="mr-1 inline h-3 w-3" />
-                                                            Pending
+                                                        <span
+                                                            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ring-inset ${
+                                                                status.className
+                                                            } ${
+                                                                booking.status ===
+                                                                "confirmed"
+                                                                    ? "ring-green-200"
+                                                                    : booking.status ===
+                                                                        "pending"
+                                                                      ? "ring-yellow-200"
+                                                                      : "ring-red-200"
+                                                            }`}
+                                                        >
+                                                            <StatusIcon className="h-3 w-3" />
+                                                            {status.label}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -405,15 +843,14 @@ export default function MyBookings({ bookings }: Props) {
                                             </div>
 
                                             {/* Payment details */}
-                                            <div className="border-t border-neutral-100 bg-neutral-50/70 px-5 py-4 sm:px-6">
-                                                <div className="grid gap-3 text-xs sm:grid-cols-4">
+                                            <div className="border-t border-neutral-100 bg-white px-4 py-4 sm:px-6">
+                                                <div className="grid grid-cols-2 items-center gap-4 sm:flex sm:flex-wrap sm:gap-x-5 sm:gap-y-3">
                                                     {/* Total */}
-                                                    <div>
-                                                        <p className="text-sm font-medium text-neutral-600">
-                                                            Total
+                                                    <div className="min-w-0">
+                                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                                                            Total Amount
                                                         </p>
-
-                                                        <p className="tracking-wider text-[14px] font-black text-neutral-900">
+                                                        <p className="mt-1 text-sm font-black text-neutral-900 sm:text-base">
                                                             {formatCurrency(
                                                                 booking.total,
                                                             )}
@@ -421,134 +858,264 @@ export default function MyBookings({ bookings }: Props) {
                                                     </div>
 
                                                     {/* Payment Status */}
-                                                    <div>
-                                                        <p className="text-xs font-semibold tracking-wide text-neutral-600">
+                                                    <div className="min-w-0 sm:border-l sm:border-neutral-200 sm:pl-5">
+                                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
                                                             Payment Status
                                                         </p>
-
                                                         <div
-                                                            className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${paymentStatus.className}`}
+                                                            className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${paymentStatus.className}`}
                                                         >
                                                             <PaymentStatusIcon
-                                                                size={13}
+                                                                size={12}
                                                             />
-                                                            {
-                                                                paymentStatus.label
-                                                            }
+                                                            <span className="break-words">
+                                                                {
+                                                                    paymentStatus.label
+                                                                }
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                {/* Payment Proof */}
-                                                {booking.payment_proof && (
-                                                    <div className="mt-3 border-t border-neutral-200 pt-3">
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex items-center gap-2">
+                                                    {/* Payment Proof Uploaded */}
+                                                    {booking.payment_proof && (
+                                                        <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-neutral-50/70 p-3 sm:col-span-1 sm:flex-1 sm:border-0 sm:bg-transparent sm:p-0">
+                                                            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-green-700">
                                                                 <Receipt
                                                                     size={14}
-                                                                    className="text-[#b0002a]"
                                                                 />
-
-                                                                <p className="text-xs font-semibold text-neutral-700">
-                                                                    Payment
-                                                                    Proof
-                                                                </p>
-
-                                                                <span className="rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-bold uppercase text-green-700 ring-1 ring-inset ring-green-200">
-                                                                    Uploaded
-                                                                </span>
-                                                            </div>
+                                                                Receipt Uploaded
+                                                            </span>
 
                                                             <button
                                                                 type="button"
-                                                                onClick={() =>
+                                                                onClick={() => {
+                                                                    setViewedProofs(
+                                                                        (
+                                                                            previous,
+                                                                        ) =>
+                                                                            previous.includes(
+                                                                                booking.id,
+                                                                            )
+                                                                                ? previous
+                                                                                : [
+                                                                                      ...previous,
+                                                                                      booking.id,
+                                                                                  ],
+                                                                    );
+
                                                                     setSelectedProof(
                                                                         `/storage/${booking.payment_proof}`,
-                                                                    )
-                                                                }
-                                                                className="rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-[10px] font-bold text-neutral-700 transition hover:border-[#b0002a] hover:text-[#b0002a]"
+                                                                    );
+                                                                }}
+                                                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[10px] font-bold text-neutral-700 transition hover:border-[#b91c1c] hover:text-[#b91c1c]"
                                                             >
+                                                                <Receipt
+                                                                    size={13}
+                                                                />
                                                                 View Proof
                                                             </button>
                                                         </div>
+                                                    )}
 
-                                                        {booking.payment_status ===
+                                                    {/* Admin Verify Payment */}
+                                                    {/* Admin Booking Actions */}
+                                                    {isAdmin &&
+                                                        booking.status ===
+                                                            "pending" &&
+                                                        booking.payment_proof &&
+                                                        booking.payment_status ===
                                                             "awaiting_confirmation" && (
-                                                            <div className="mt-2 flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2">
-                                                                <Clock3
-                                                                    size={13}
-                                                                    className="shrink-0 text-blue-600"
-                                                                />
+                                                            <div className="col-span-2 flex justify-end border-t border-neutral-100 pt-3 sm:col-span-2 sm:ml-auto sm:border-0 sm:pt-0">
+                                                                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                                                                    {/* Confirm Payment */}
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={
+                                                                            !viewedProofs.includes(
+                                                                                booking.id,
+                                                                            )
+                                                                        }
+                                                                        onClick={() => {
+                                                                            if (
+                                                                                !viewedProofs.includes(
+                                                                                    booking.id,
+                                                                                )
+                                                                            )
+                                                                                return;
 
-                                                                <p className="text-[10px] text-blue-700">
-                                                                    <span className="font-bold">
-                                                                        Awaiting
-                                                                        Confirmation
-                                                                    </span>{" "}
-                                                                    — Your
-                                                                    payment is
-                                                                    being
-                                                                    verified.
-                                                                </p>
+                                                                            if (
+                                                                                !window.confirm(
+                                                                                    `Verify payment for booking ${booking.booking_reference}?`,
+                                                                                )
+                                                                            ) {
+                                                                                return;
+                                                                            }
+
+                                                                            router.patch(
+                                                                                `/admin/bookings/${booking.id}/verify-payment`,
+                                                                                {},
+                                                                                {
+                                                                                    preserveScroll: true,
+                                                                                },
+                                                                            );
+                                                                        }}
+                                                                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-[11px] font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 sm:w-auto"
+                                                                    >
+                                                                        <CheckCircle2
+                                                                            size={
+                                                                                14
+                                                                            }
+                                                                        />
+                                                                        Confirm
+                                                                        Payment
+                                                                    </button>
+
+                                                                    {/* Reject Booking */}
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={
+                                                                            !viewedProofs.includes(
+                                                                                booking.id,
+                                                                            )
+                                                                        }
+                                                                        onClick={() => {
+                                                                            if (
+                                                                                !viewedProofs.includes(
+                                                                                    booking.id,
+                                                                                )
+                                                                            )
+                                                                                return;
+
+                                                                            if (
+                                                                                !window.confirm(
+                                                                                    `Reject booking ${booking.booking_reference} due to incorrect or invalid payment proof?`,
+                                                                                )
+                                                                            ) {
+                                                                                return;
+                                                                            }
+
+                                                                            router.delete(
+                                                                                `/admin/bookings/${booking.id}/reject`,
+                                                                                {
+                                                                                    preserveScroll: true,
+                                                                                },
+                                                                            );
+                                                                        }}
+                                                                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-bold text-[#b91c1c] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-neutral-400 sm:w-auto"
+                                                                    >
+                                                                        <XCircle
+                                                                            size={
+                                                                                14
+                                                                            }
+                                                                        />
+                                                                        Reject
+                                                                        Booking
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         )}
-                                                    </div>
-                                                )}
 
-                                                {/* Upload Payment Proof */}
-                                                {booking.status === "pending" &&
-                                                    !booking.payment_proof && (
-                                                        <div className="mt-4 border-t border-neutral-200 pt-4">
-                                                            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-                                                                <div className="flex items-start gap-2">
-                                                                    <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
-
-                                                                    <div>
-                                                                        <p className="text-xs font-bold text-yellow-800">
-                                                                            Payment
-                                                                            proof
-                                                                            required
-                                                                        </p>
-
-                                                                        <p className="mt-0.5 text-[11px] leading-relaxed text-yellow-700">
-                                                                            Upload
-                                                                            your
-                                                                            payment
-                                                                            receipt
-                                                                            to
-                                                                            submit
-                                                                            this
-                                                                            booking
-                                                                            for
-                                                                            confirmation.
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-
+                                                    {/* User Cancel Booking */}
+                                                    {!isAdmin &&
+                                                        booking.status ===
+                                                            "pending" &&
+                                                        !booking.payment_proof && (
+                                                            <div className="col-span-2 flex justify-end border-t border-neutral-100 pt-3 sm:col-span-2 sm:ml-auto sm:border-0 sm:pt-0">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => {
-                                                                        setSelectedBooking(
-                                                                            booking,
-                                                                        );
-                                                                        setPaymentProof(
-                                                                            null,
+                                                                        if (
+                                                                            !window.confirm(
+                                                                                `Cancel booking ${booking.booking_reference}? This action cannot be undone.`,
+                                                                            )
+                                                                        ) {
+                                                                            return;
+                                                                        }
+
+                                                                        router.delete(
+                                                                            `/booking/my-bookings/${booking.id}/cancel`,
+                                                                            {
+                                                                                preserveScroll: true,
+                                                                            },
                                                                         );
                                                                     }}
-                                                                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-[#b91c1c] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#991b1b]"
+                                                                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-[11px] font-bold text-[#b91c1c] transition hover:bg-red-50 sm:w-auto"
                                                                 >
-                                                                    <Receipt
+                                                                    <XCircle
                                                                         size={
                                                                             14
                                                                         }
                                                                     />
-                                                                    Upload
-                                                                    Payment
-                                                                    Proof
+                                                                    Cancel
+                                                                    Booking
                                                                 </button>
                                                             </div>
-                                                        </div>
-                                                    )}
+                                                        )}
+
+                                                    {/* Pending Payment Notice / User Upload */}
+                                                    {booking.status ===
+                                                        "pending" &&
+                                                        !booking.payment_proof && (
+                                                            <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 sm:flex-1">
+                                                                <div className="flex min-w-0 items-center gap-2">
+                                                                    <Clock3
+                                                                        size={
+                                                                            14
+                                                                        }
+                                                                        className={
+                                                                            isAdmin
+                                                                                ? "shrink-0 text-blue-600"
+                                                                                : "shrink-0 text-amber-600"
+                                                                        }
+                                                                    />
+                                                                    <span className="text-[10px] font-medium text-neutral-600">
+                                                                        {isAdmin
+                                                                            ? "Waiting for payment receipt"
+                                                                            : "Payment proof required"}
+                                                                    </span>
+                                                                </div>
+
+                                                                {!isAdmin && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setSelectedBooking(
+                                                                                booking,
+                                                                            );
+                                                                            setPaymentProof(
+                                                                                null,
+                                                                            );
+                                                                        }}
+                                                                        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#b91c1c] px-3 py-2 text-[10px] font-bold text-white transition hover:bg-[#991b1b]"
+                                                                    >
+                                                                        <Receipt
+                                                                            size={
+                                                                                12
+                                                                            }
+                                                                        />
+                                                                        Upload
+                                                                        Proof
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                    {/* Awaiting Confirmation */}
+                                                    {!isAdmin &&
+                                                        booking.payment_proof &&
+                                                        booking.payment_status ===
+                                                            "awaiting_confirmation" && (
+                                                            <div className="col-span-2 flex items-center gap-2 text-[10px] font-medium text-blue-700 sm:col-span-1">
+                                                                <Clock3
+                                                                    size={13}
+                                                                />
+                                                                Awaiting
+                                                                verification
+                                                            </div>
+                                                        )}
+
+                                                    {/* Cancel / Reject Booking */}
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -599,23 +1166,6 @@ export default function MyBookings({ bookings }: Props) {
 
                         {/* Modal Body */}
                         <div className="space-y-4 p-5">
-                            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
-                                <div className="flex items-start gap-2">
-                                    <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
-
-                                    <div>
-                                        <p className="text-xs font-bold text-yellow-800">
-                                            Payment proof required
-                                        </p>
-
-                                        <p className="mt-0.5 text-[11px] leading-relaxed text-yellow-700">
-                                            Upload your payment receipt for this
-                                            booking.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Booking Reference */}
                             <div>
                                 <p className="text-xs font-semibold text-neutral-600">

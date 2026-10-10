@@ -90,16 +90,18 @@ export default function Booking({
                                     </p>
 
                                     <h1 className="text-sm font-bold leading-tight sm:text-base">
-                                        Book a Court
+                                        {auth.user?.role === "admin"
+                                            ? "Book Walk-In"
+                                            : "Book a Court"}
                                     </h1>
                                 </div>
                             </Link>
                         </div>
 
-                        <div className=" items-center sm:flex">
+                        <div className="items-center sm:flex">
                             {auth.user && (
                                 <Link
-                                    href="/booking/my-bookings"
+                                    href={"/booking/my-bookings"}
                                     className="group relative flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 transition-all duration-200 hover:border-white/20 hover:bg-white/10"
                                 >
                                     {/* Icon */}
@@ -110,11 +112,15 @@ export default function Booking({
                                     {/* Text */}
                                     <div className="leading-tight">
                                         <p className="text-sm font-bold text-white transition-colors duration-200 group-hover:text-red-50">
-                                            My Bookings
+                                            {auth.user.role === "admin"
+                                                ? "View All Bookings"
+                                                : "My Bookings"}
                                         </p>
 
                                         <p className="mt-0.5 text-[11px] font-medium text-red-100 transition-colors duration-200 group-hover:text-white">
-                                            View your reservations
+                                            {auth.user.role === "admin"
+                                                ? "Manage all reservations"
+                                                : "View your reservations"}
                                         </p>
                                     </div>
 

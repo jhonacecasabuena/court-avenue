@@ -182,7 +182,9 @@ export default function Dashboard() {
 
                         <div className="flex flex-wrap items-center gap-3">
                             <button
-                                type="button"
+                                onClick={() =>
+                                    router.get("/booking/my-bookings")
+                                }
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#b91c1c] px-4 text-sm font-semibold text-white shadow-lg shadow-red-900/10 transition hover:bg-red-800"
                             >
                                 <Settings className="h-4 w-4" />

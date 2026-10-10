@@ -884,14 +884,32 @@ class BookingController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $bookings = Booking::query()
-            ->where('user_id', auth()->id())
+        $user = auth()->user();
+
+        $bookingsQuery = Booking::query()
             ->with([
+                'user:id,name,email',
                 'items.court',
                 'items.timeSlot',
             ])
-            ->latest()
-            ->get();
+            ->latest();
+
+        // Regular users can only view their own bookings.
+        // Admins can view all bookings.
+        if (! $user->hasRole('admin')) {
+            $bookingsQuery->where('user_id', $user->id);
+        }
+
+        $bookings = $bookingsQuery->get();
+
+        // $bookings = Booking::query()
+        //     ->where('user_id', auth()->id())
+        //     ->with([
+        //         'items.court',
+        //         'items.timeSlot',
+        //     ])
+        //     ->latest()
+        //     ->get();
 
         return Inertia::render(
             'court_avenue/booking/my_bookings',
@@ -900,4 +918,31 @@ class BookingController extends Controller
             ]
         );
     }
+
+
+    public function cancel(Request $request, Booking $booking)
+    {
+        abort_unless(
+            $booking->user_id === $request->user()->id,
+            403
+        );
+
+        if ($booking->status !== 'pending') {
+            return back()->with(
+                'error',
+                'Only pending bookings can be cancelled.'
+            );
+        }
+
+        $booking->delete();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Booking cancelled successfully.',
+        ]);
+
+        return redirect()->route('booking.my-bookings');
+    }
+
+
 }

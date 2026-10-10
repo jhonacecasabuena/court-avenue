@@ -81,6 +81,11 @@ Route::middleware('auth')->group(function () {
         'myBookings',
     ])->name('booking.my-bookings');
 
+    Route::delete(
+        '/booking/my-bookings/{booking}/cancel',
+        [BookingController::class, 'cancel']
+        )->name('booking.cancel');
+
 
       Route::post('/booking/confirm', [
         BookingController::class,
