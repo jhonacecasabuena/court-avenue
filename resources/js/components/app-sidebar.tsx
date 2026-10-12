@@ -49,7 +49,7 @@ const mainNavItems: NavItem[] = [
         icon: CalendarDays,
     },
     {
-        title: "Support",
+        title: "Messages",
         href: "/support/inbox",
         icon: CircleHelp,
     },

@@ -176,6 +176,37 @@ class SupportController extends Controller
     /**
      * Get one conversation for Admin/Staff.
      */
+    // public function show(
+    //     Request $request,
+    //     SupportConversation $conversation
+    // ): JsonResponse {
+    //     abort_unless(
+    //         $request->user()->hasAnyRole(['admin', 'staff']),
+    //         403
+    //     );
+
+    //     $conversation->load([
+    //         'user:id,name,email',
+    //         'messages' => function ($query) {
+    //             $query->orderBy('created_at');
+    //         },
+    //     ]);
+
+    //     $conversation->messages()
+    //         ->where('sender_type', 'customer')
+    //         ->whereNull('read_at')
+    //         ->update([
+    //             'read_at' => now(),
+    //         ]);
+
+    //     return response()->json([
+    //         'conversation' => $conversation,
+    //     ]);
+    // }
+
+    /**
+ * Get one conversation for Admin/Staff.
+ */
     public function show(
         Request $request,
         SupportConversation $conversation
@@ -185,19 +216,21 @@ class SupportController extends Controller
             403
         );
 
-        $conversation->load([
-            'user:id,name,email',
-            'messages' => function ($query) {
-                $query->orderBy('created_at');
-            },
-        ]);
-
+        // Mark customer messages as read first.
         $conversation->messages()
             ->where('sender_type', 'customer')
             ->whereNull('read_at')
             ->update([
                 'read_at' => now(),
             ]);
+
+        // Load the conversation after updating read_at.
+        $conversation->load([
+            'user:id,name,email',
+            'messages' => function ($query) {
+                $query->orderBy('created_at');
+            },
+        ]);
 
         return response()->json([
             'conversation' => $conversation,

@@ -72,9 +72,10 @@ export default function AuthSimpleLayout({
                             </h2>
 
                             <p className="mt-6 max-w-lg text-base leading-7 text-white/75">
-                                Welcome to Court Avenue — your place to discover
-                                courts, book your games, and connect with the
-                                pickleball community.
+                                Welcome to Court Avenue — We’re here to bring
+                                players together, build a strong pickleball
+                                community, and create a court where everyone is
+                                welcome to play, compete, connect, and have fun.
                             </p>
                         </div>
 

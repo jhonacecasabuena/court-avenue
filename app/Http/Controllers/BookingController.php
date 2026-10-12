@@ -64,12 +64,17 @@ class BookingController extends Controller
             })
             ->values();
 
+            $savedCheckout = session('booking.checkout', []);
+
+            $savedSelections = $savedCheckout['selections'] ?? [];
+
         return Inertia::render(
             'court_avenue/booking/index',
             [
                 'courts' => $courts,
                 'timeSlots' => $timeSlots,
                 'bookedSlots' => $bookedSlots,
+                'savedSelections' => $savedSelections,
             ]
         );
     }
@@ -209,7 +214,7 @@ class BookingController extends Controller
         if (! auth()->check()) {
             $request->session()->put(
                 'url.intended',
-                route('booking.checkout')
+                route('booking.index')
             );
 
             return redirect()->route('login');
@@ -348,7 +353,7 @@ class BookingController extends Controller
                 |
                 | The selected slots are now temporarily reserved.
                 |
-                | Payment must be completed within 8 minutes.
+                | Payment must be completed within 10 minutes.
                 |
                 */
 
@@ -384,12 +389,12 @@ class BookingController extends Controller
 
                     /*
                     |--------------------------------------------------------------------------
-                    | 8-minute payment window
+                    | 10-minute payment window
                     |--------------------------------------------------------------------------
                     */
 
                     'expires_at' =>
-                        now()->addMinutes(8),
+                        now()->addMinutes(10),
                 ]);
 
                 /*
@@ -426,6 +431,10 @@ class BookingController extends Controller
                     $e->getMessage()
                 );
         }
+
+
+        $request->session()->forget('booking.checkout');
+
 
         /*
         |--------------------------------------------------------------------------
@@ -507,7 +516,7 @@ class BookingController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Check 8-minute expiration
+        | Check 10-minute expiration
         |--------------------------------------------------------------------------
         */
 
@@ -725,7 +734,7 @@ class BookingController extends Controller
             
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => 'Your 8-minute payment window has expired. Please select your court and time again.',
+                'message' => 'Your 10-minute payment window has expired. Please select your court and time again.',
             ]);
 
             return redirect()
@@ -862,7 +871,7 @@ class BookingController extends Controller
     {
         /*
         |--------------------------------------------------------------------------
-        | Expire pending bookings whose 8-minute payment window has passed
+        | Expire pending bookings whose 10-minute payment window has passed
         |--------------------------------------------------------------------------
         */
 

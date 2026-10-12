@@ -56,6 +56,9 @@ export default function Conversation({ conversationId }: Props) {
     const [sending, setSending] = useState(false);
     const [closing, setClosing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+    const shouldAutoScrollRef = useRef(true);
+    const previousMessageIdsRef = useRef<Set<number>>(new Set());
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchConversation = async () => {
@@ -76,34 +79,152 @@ export default function Conversation({ conversationId }: Props) {
         }
     };
 
+    // const previousMessageCount = useRef(0);
+
+    // useEffect(() => {
+    //     const count = conversation?.messages.length ?? 0;
+
+    //     if (count > previousMessageCount.current) {
+    //         messagesEndRef.current?.scrollIntoView({
+    //             behavior: "smooth",
+    //             block: "end",
+    //         });
+    //     }
+
+    //     previousMessageCount.current = count;
+    // }, [conversation?.messages.length]);
+
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
+        const messages = conversation?.messages ?? [];
+
+        if (messages.length === 0) return;
+
+        const previousIds = previousMessageIdsRef.current;
+        const currentIds = new Set(messages.map((item) => item.id));
+
+        const hasNewMessage = messages.some(
+            (item) => !previousIds.has(item.id),
+        );
+
+        previousMessageIdsRef.current = currentIds;
+
+        if (!hasNewMessage || !shouldAutoScrollRef.current) {
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            messagesEndRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "end",
+            });
         });
     }, [conversation?.messages]);
 
-    const refreshConversation = async () => {
+    const isFetchingRef = useRef(false);
+
+    const refreshConversation = async (initial = false) => {
+        if (isFetchingRef.current) return;
+
+        isFetchingRef.current = true;
+
         try {
-            setRefreshing(true);
+            if (initial) {
+                setLoading(true);
+            } else {
+                setRefreshing(true);
+            }
 
             const response = await axios.get(
                 `/support/conversations/${conversationId}/data`,
             );
 
-            setConversation(response.data.conversation);
+            const latest = response.data.conversation as SupportConversation;
+
+            setConversation((current) => {
+                if (!current) return latest;
+
+                // Keep existing messages and append only new ones.
+                const existingIds = new Set(
+                    current.messages.map((item) => item.id),
+                );
+
+                const newMessages = latest.messages.filter(
+                    (item) => !existingIds.has(item.id),
+                );
+
+                return {
+                    ...current,
+                    ...latest,
+                    messages: [...current.messages, ...newMessages].sort(
+                        (a, b) =>
+                            new Date(a.created_at).getTime() -
+                            new Date(b.created_at).getTime(),
+                    ),
+                };
+            });
         } catch (error) {
             console.error("Failed to refresh conversation:", error);
-
-            toast.error("Unable to refresh conversation.");
         } finally {
+            isFetchingRef.current = false;
+            setLoading(false);
             setRefreshing(false);
         }
     };
 
     useEffect(() => {
-        fetchConversation();
+        void refreshConversation(true);
+
+        const interval = setInterval(() => {
+            void refreshConversation();
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, [conversationId]);
+
+    // // Initial load + automatic refresh every 5 seconds
+    // useEffect(() => {
+    //     let isMounted = true;
+    //     let isFetching = false;
+
+    //     const loadConversation = async (initial = false) => {
+    //         if (!isMounted || isFetching) return;
+
+    //         isFetching = true;
+
+    //         try {
+    //             if (initial) {
+    //                 setLoading(true);
+    //             }
+
+    //             const response = await axios.get(
+    //                 `/support/conversations/${conversationId}/data`,
+    //             );
+
+    //             if (isMounted) {
+    //                 setConversation(response.data.conversation);
+    //             }
+    //         } catch (error) {
+    //             console.error("Failed to load conversation:", error);
+    //         } finally {
+    //             isFetching = false;
+
+    //             if (isMounted && initial) {
+    //                 setLoading(false);
+    //             }
+    //         }
+    //     };
+
+    //     void loadConversation(true);
+
+    //     const interval = setInterval(() => {
+    //         void loadConversation();
+    //     }, 5000);
+
+    //     return () => {
+    //         isMounted = false;
+    //         clearInterval(interval);
+    //     };
+    // }, [conversationId]);
 
     const customerName = useMemo(() => {
         if (!conversation) {
@@ -249,7 +370,7 @@ export default function Conversation({ conversationId }: Props) {
         <>
             <Head title={`${customerName} · Support`} />
 
-            <div className="flex min-h-screen flex-col bg-gray-50/70">
+            <div className="flex h-dvh flex-col overflow-hidden bg-gray-50/70">
                 {/* Header */}
                 <header className="border-b border-gray-200 bg-white">
                     <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6">
@@ -304,35 +425,21 @@ export default function Conversation({ conversationId }: Props) {
                             <div className="flex shrink-0 items-center gap-2">
                                 <StatusBadge status={conversation.status} />
 
-                                {/* Refresh */}
-                                <button
-                                    type="button"
-                                    onClick={refreshConversation}
-                                    disabled={refreshing || closing}
-                                    title="Refresh conversation"
-                                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    <RefreshCw
-                                        className={`h-4 w-4 ${
-                                            refreshing ? "animate-spin" : ""
-                                        }`}
-                                    />
-                                </button>
-
-                                {/* Close */}
                                 {conversation.status === "open" && (
                                     <button
                                         type="button"
                                         onClick={closeConversation}
                                         disabled={closing || refreshing}
-                                        className="hidden h-9 items-center gap-2 rounded-xl border border-gray-200 px-3 text-xs font-semibold text-gray-600 transition hover:border-red-200 hover:bg-red-50 hover:text-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60 sm:inline-flex"
+                                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 px-2 text-xs font-semibold text-gray-600 transition hover:border-red-200 hover:bg-red-50 hover:text-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60 sm:gap-2 sm:px-3"
                                     >
                                         {closing ? (
                                             <LoaderCircle className="h-4 w-4 animate-spin" />
                                         ) : (
-                                            <Archive className="h-4 w-4" />
+                                            <Archive className="h-4 w-4 shrink-0" />
                                         )}
-                                        Close
+                                        <span className="hidden sm:inline">
+                                            Close
+                                        </span>
                                     </button>
                                 )}
                             </div>
@@ -341,17 +448,33 @@ export default function Conversation({ conversationId }: Props) {
                 </header>
 
                 {/* Chat */}
-                <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 sm:px-6">
-                    <div className="flex flex-1 flex-col">
-                        {/* Conversation info */}
-                        <div className="py-5 text-center">
-                            <span className="rounded-full bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 shadow-sm ring-1 ring-gray-200">
-                                Conversation #{conversation.id}
-                            </span>
-                        </div>
+                {/* Chat */}
+                <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 sm:px-6 min-h-0">
+                    {/* Conversation info */}
+                    <div className="shrink-0 py-5 text-center">
+                        <span className="rounded-full bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 shadow-sm ring-1 ring-gray-200">
+                            Conversa #{conversation.id}
+                        </span>
+                    </div>
 
-                        {/* Messages */}
-                        <div className="flex-1 space-y-4 pb-6">
+                    {/* Messages */}
+                    <div
+                        ref={messagesContainerRef}
+                        onScroll={(event) => {
+                            const element = event.currentTarget;
+
+                            const distanceFromBottom =
+                                element.scrollHeight -
+                                element.scrollTop -
+                                element.clientHeight;
+
+                            shouldAutoScrollRef.current =
+                                distanceFromBottom < 100;
+                        }}
+                        className="min-h-0 flex-1 overflow-y-auto pb-6"
+                        style={{ scrollbarGutter: "stable" }}
+                    >
+                        <div className="space-y-4">
                             {conversation.messages.length === 0 ? (
                                 <div className="flex min-h-[300px] items-center justify-center text-sm text-gray-400">
                                     No messages yet.
@@ -372,77 +495,74 @@ export default function Conversation({ conversationId }: Props) {
                                 })
                             )}
 
-                            {/* Auto-scroll anchor */}
                             <div ref={messagesEndRef} />
                         </div>
-
-                        {/* Reply */}
-                        {conversation.status === "open" ? (
-                            <div className="sticky bottom-0 -mx-4 border-t border-gray-200 bg-gray-50/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
-                                <form
-                                    onSubmit={sendMessage}
-                                    className="mx-auto max-w-5xl"
-                                >
-                                    <div className="flex items-end gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm focus-within:border-[#b91c1c] focus-within:ring-4 focus-within:ring-red-50">
-                                        <textarea
-                                            value={message}
-                                            onChange={(event) =>
-                                                setMessage(event.target.value)
-                                            }
-                                            onKeyDown={(event) => {
-                                                if (
-                                                    event.key === "Enter" &&
-                                                    !event.shiftKey
-                                                ) {
-                                                    event.preventDefault();
-
-                                                    if (message.trim()) {
-                                                        event.currentTarget.form?.requestSubmit();
-                                                    }
-                                                }
-                                            }}
-                                            placeholder="Type your reply..."
-                                            rows={1}
-                                            maxLength={2000}
-                                            className="max-h-32 min-h-10 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:ring-0"
-                                        />
-
-                                        <button
-                                            type="submit"
-                                            disabled={
-                                                sending || !message.trim()
-                                            }
-                                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b91c1c] text-white transition hover:bg-[#991b1b] disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                            {sending ? (
-                                                <LoaderCircle className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Send className="h-4 w-4" />
-                                            )}
-                                        </button>
-                                    </div>
-
-                                    <div className="mt-2 flex items-center justify-between px-1">
-                                        <p className="text-[10px] text-gray-400">
-                                            Press Enter to send · Shift + Enter
-                                            for a new line
-                                        </p>
-
-                                        <span className="text-[10px] text-gray-400">
-                                            {message.length}/2000
-                                        </span>
-                                    </div>
-                                </form>
-                            </div>
-                        ) : (
-                            <div className="sticky bottom-0 -mx-4 border-t border-gray-200 bg-gray-50 px-4 py-5 sm:-mx-6 sm:px-6">
-                                <div className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
-                                    <CheckCheck className="h-4 w-4 text-green-600" />
-                                    This conversation is closed.
-                                </div>
-                            </div>
-                        )}
                     </div>
+
+                    {/* Reply */}
+                    {conversation.status === "open" ? (
+                        <div className="shrink-0 -mx-4 border-t border-gray-200 bg-gray-50/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
+                            <form
+                                onSubmit={sendMessage}
+                                className="mx-auto max-w-5xl"
+                            >
+                                <div className="flex items-end gap-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm focus-within:border-[#b91c1c] focus-within:ring-4 focus-within:ring-red-50">
+                                    <textarea
+                                        value={message}
+                                        onChange={(event) =>
+                                            setMessage(event.target.value)
+                                        }
+                                        onKeyDown={(event) => {
+                                            if (
+                                                event.key === "Enter" &&
+                                                !event.shiftKey
+                                            ) {
+                                                event.preventDefault();
+
+                                                if (message.trim()) {
+                                                    event.currentTarget.form?.requestSubmit();
+                                                }
+                                            }
+                                        }}
+                                        placeholder="Type your reply..."
+                                        rows={1}
+                                        maxLength={2000}
+                                        className="max-h-32 min-h-10 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:ring-0"
+                                    />
+
+                                    <button
+                                        type="submit"
+                                        disabled={sending || !message.trim()}
+                                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#b91c1c] text-white transition hover:bg-[#991b1b] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {sending ? (
+                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Send className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+
+                                <div className="mt-2 flex items-center justify-between px-1">
+                                    <p className="text-[10px] text-gray-400">
+                                        Press Enter to send · Shift + Enter for
+                                        a new line
+                                    </p>
+
+                                    <span className="text-[10px] text-gray-400">
+                                        {message.length}/2000
+                                    </span>
+                                </div>
+                            </form>
+                        </div>
+                    ) : (
+                        <div className="shrink-0 -mx-4 border-t border-gray-200 bg-gray-50 px-4 py-5 sm:-mx-6 sm:px-6">
+                            <div className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
+                                <CheckCheck className="h-4 w-4 text-green-600" />
+                                This conversation is closed.
+                            </div>
+                        </div>
+                    )}
                 </main>
             </div>
         </>
@@ -486,7 +606,7 @@ function MessageBubble({
                 }`}
             >
                 <div className="mb-1 flex items-center gap-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">
                         {isStaff ? "Support" : "Customer"}
                     </span>
                 </div>
@@ -504,11 +624,11 @@ function MessageBubble({
                 </div>
 
                 <div className="mt-1 flex items-center gap-1.5">
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[10px] text-gray-700">
                         {formatMessageTime(message.created_at)}
                     </span>
 
-                    {isStaff && <Check className="h-3 w-3 text-gray-400" />}
+                    {isStaff && <Check className="h-3 w-3 text-gray-600" />}
                 </div>
             </div>
         </motion.div>

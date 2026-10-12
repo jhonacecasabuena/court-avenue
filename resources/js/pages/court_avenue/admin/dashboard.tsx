@@ -9,6 +9,7 @@ import {
     Users,
     ChevronLeft,
     ChevronRight,
+    MessageCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -188,7 +189,7 @@ export default function Dashboard() {
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#b91c1c] px-4 text-sm font-semibold text-white shadow-lg shadow-red-900/10 transition hover:bg-red-800"
                             >
                                 <Settings className="h-4 w-4" />
-                                Manage Payment Verification
+                                Manage Booking & Payment Verification
                             </button>
 
                             <button
@@ -197,6 +198,14 @@ export default function Dashboard() {
                             >
                                 <Plus className="h-4 w-4" />
                                 New Booking / Walk-Ins
+                            </button>
+
+                            <button
+                                onClick={() => router.get("/support/inbox")}
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#b91c1c] px-4 text-sm font-semibold text-white shadow-lg shadow-red-900/10 transition hover:bg-red-800"
+                            >
+                                <MessageCircle className="h-4 w-4" />
+                                Inbox
                             </button>
                         </div>
                     </motion.div>

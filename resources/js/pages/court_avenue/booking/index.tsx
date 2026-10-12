@@ -1,11 +1,13 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
     ArrowLeft,
     CalendarDays,
     CheckCircle2,
+    ChevronDown,
     ClipboardList,
     Info,
+    LogOut,
     MapPin,
     ShieldCheck,
 } from "lucide-react";
@@ -15,6 +17,8 @@ import CourtSchedule from "@/components/booking_court_avenue/CourtSchedule";
 import BookingSummary from "@/components/booking_court_avenue/BookingSummary";
 import { useBooking } from "@/hooks/use-booking";
 import type { Court, TimeSlot, BookedSlot } from "@/types";
+import ChatWidget from "@/components/booking_chat/ChatWidget";
+import { toast } from "sonner";
 
 type AuthUser = {
     id: number;
@@ -23,10 +27,17 @@ type AuthUser = {
     role?: string;
 };
 
+type Selection = {
+    date: string;
+    court_id: number;
+    time_slot_id: number;
+};
+
 type PageProps = {
     auth: {
         user: AuthUser | null;
     };
+    savedSelections: Selection[];
 };
 
 type BookingPageProps = {
@@ -40,7 +51,15 @@ export default function Booking({
     timeSlots,
     bookedSlots,
 }: BookingPageProps) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, savedSelections = [] } = usePage<PageProps>().props;
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const closeMenu = () => {
+        setOpen(false);
+        setUserMenuOpen(false);
+    };
 
     const backUrl = auth.user?.role === "admin" ? "/admin/dashboard" : "/";
 
@@ -53,7 +72,7 @@ export default function Booking({
         subtotal,
         serviceFee,
         total,
-    } = useBooking(courts, timeSlots, bookedSlots);
+    } = useBooking(courts, timeSlots, bookedSlots, savedSelections);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -64,6 +83,23 @@ export default function Booking({
 
         return () => clearInterval(interval);
     }, []);
+
+    const handleLogout = () => {
+        closeMenu();
+
+        router.post(
+            "/logout",
+            {},
+            {
+                onSuccess: () => {
+                    toast.success("Logged out successfully", {
+                        description:
+                            "You have been safely signed out of your account.",
+                    });
+                },
+            },
+        );
+    };
 
     return (
         <>
@@ -98,35 +134,227 @@ export default function Booking({
                             </Link>
                         </div>
 
-                        <div className="items-center sm:flex">
+                        <div className="flex items-center">
                             {auth.user && (
-                                <Link
-                                    href={"/booking/my-bookings"}
-                                    className="group relative flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 transition-all duration-200 hover:border-white/20 hover:bg-white/10"
-                                >
-                                    {/* Icon */}
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#b91c1c] shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:bg-red-50 group-hover:shadow-md">
-                                        <ClipboardList className="h-4 w-4 transition-transform duration-200 group-hover:-rotate-3" />
-                                    </div>
+                                <div className="relative">
+                                    {/* User avatar trigger */}
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setMenuOpen((prev) => !prev)
+                                        }
+                                        aria-label="Open user menu"
+                                        aria-expanded={menuOpen}
+                                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 py-1.5 pl-2 pr-3 transition hover:bg-white/20"
+                                    >
+                                        {/* Logged-in user's initials */}
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-[#b91c1c] shadow-sm">
+                                            {auth.user.name
+                                                ?.trim()
+                                                .split(/\s+/)
+                                                .slice(0, 2)
+                                                .map((name) =>
+                                                    name[0].toUpperCase(),
+                                                )
+                                                .join("") || "U"}
+                                        </div>
 
-                                    {/* Text */}
-                                    <div className="leading-tight">
-                                        <p className="text-sm font-bold text-white transition-colors duration-200 group-hover:text-red-50">
-                                            {auth.user.role === "admin"
-                                                ? "View All Bookings"
-                                                : "My Bookings"}
-                                        </p>
+                                        <ChevronDown
+                                            size={16}
+                                            className={`text-white transition-transform duration-200 ${
+                                                menuOpen ? "rotate-180" : ""
+                                            }`}
+                                        />
+                                    </button>
 
-                                        <p className="mt-0.5 text-[11px] font-medium text-red-100 transition-colors duration-200 group-hover:text-white">
-                                            {auth.user.role === "admin"
-                                                ? "Manage all reservations"
-                                                : "View your reservations"}
-                                        </p>
-                                    </div>
+                                    {/* Popup menu */}
+                                    {menuOpen && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                aria-label="Close user menu"
+                                                className="fixed inset-0 z-40 cursor-default"
+                                                onClick={() =>
+                                                    setMenuOpen(false)
+                                                }
+                                            />
 
-                                    {/* Hover indicator */}
-                                    <span className="absolute bottom-1.5 left-3 right-3 h-0.5 origin-left scale-x-0 rounded-full bg-white transition-transform duration-200 group-hover:scale-x-100" />
-                                </Link>
+                                            <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-neutral-200 bg-white p-2 shadow-xl">
+                                                {/* User information */}
+                                                <div className="flex items-center gap-3 border-b border-neutral-100 px-3 py-3">
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#b91c1c] text-sm font-bold text-white">
+                                                        {auth.user.name
+                                                            ?.trim()
+                                                            .split(/\s+/)
+                                                            .slice(0, 2)
+                                                            .map((name) =>
+                                                                name[0].toUpperCase(),
+                                                            )
+                                                            .join("") || "U"}
+                                                    </div>
+
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-bold text-neutral-900">
+                                                            {auth.user.name}
+                                                        </p>
+                                                        <p className="truncate text-xs text-neutral-500">
+                                                            {auth.user.email}
+                                                        </p>
+                                                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#b91c1c]">
+                                                            {auth.user.role ===
+                                                            "user"
+                                                                ? "Player"
+                                                                : "Administrator"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {auth.user.role === "admin" && (
+                                                    <>
+                                                        <Link
+                                                            href="/admin/dashboard"
+                                                            onClick={() =>
+                                                                setMenuOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                            className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                        >
+                                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                                <ClipboardList
+                                                                    size={19}
+                                                                />
+                                                            </div>
+
+                                                            <div className="min-w-0 leading-tight">
+                                                                <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                                    Dashboard
+                                                                </p>
+
+                                                                <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                                    Go to
+                                                                    Dashboard
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                        <Link
+                                                            href="/support/inbox"
+                                                            onClick={() =>
+                                                                setMenuOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                            className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                        >
+                                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                                <ClipboardList
+                                                                    size={19}
+                                                                />
+                                                            </div>
+
+                                                            <div className="min-w-0 leading-tight">
+                                                                <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                                    Messages
+                                                                </p>
+
+                                                                <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                                    Go to
+                                                                    Customer's
+                                                                    Inquiry
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                    </>
+                                                )}
+
+                                                {/* My Bookings */}
+                                                <Link
+                                                    href="/booking/my-bookings"
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                        <ClipboardList
+                                                            size={19}
+                                                        />
+                                                    </div>
+
+                                                    <div className="min-w-0 leading-tight">
+                                                        <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                            {auth.user.role ===
+                                                            "admin"
+                                                                ? "View All Bookings"
+                                                                : "My Bookings"}
+                                                        </p>
+
+                                                        <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                            {auth.user.role ===
+                                                            "admin"
+                                                                ? "Manage all reservations"
+                                                                : "View your reservations"}
+                                                        </p>
+                                                    </div>
+                                                </Link>
+
+                                                {auth.user.role != "admin" && (
+                                                    <Link
+                                                        href="/"
+                                                        onClick={() =>
+                                                            setMenuOpen(false)
+                                                        }
+                                                        className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                    >
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                            <ClipboardList
+                                                                size={19}
+                                                            />
+                                                        </div>
+
+                                                        <div className="min-w-0 leading-tight">
+                                                            <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                                Send an Inquiry
+                                                            </p>
+
+                                                            <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                                Ask Admin for
+                                                                questions
+                                                            </p>
+                                                        </div>
+                                                    </Link>
+                                                )}
+
+                                                <div className="my-2 border-t border-neutral-100" />
+
+                                                {/* Logout */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        handleLogout();
+                                                    }}
+                                                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500 transition-colors group-hover:bg-red-100 group-hover:text-[#b0002a]">
+                                                        <LogOut size={19} />
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-neutral-700 transition-colors group-hover:text-[#b0002a]">
+                                                            Log Out
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Sign out of your
+                                                            account
+                                                        </p>
+                                                    </div>
+                                                </button>
+
+                                                {/* My Bookings */}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>

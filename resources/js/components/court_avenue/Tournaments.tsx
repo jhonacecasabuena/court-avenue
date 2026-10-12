@@ -7,7 +7,7 @@ export default function Tournaments() {
                 <div className="grid items-center gap-12 lg:grid-cols-2">
                     <div className="overflow-hidden rounded-3xl">
                         <img
-                            src="/images/court_avenue/court.jpg"
+                            src="/images/court_avenue/court1.jpg"
                             alt="Pickleball tournament"
                             className="h-[420px] w-full object-cover"
                         />
@@ -33,7 +33,7 @@ export default function Tournaments() {
                         </p>
 
                         <button className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#b0002a] px-7 py-4 font-bold text-white">
-                            View Tournaments
+                            View Available Tournaments
                             <ArrowRight size={18} />
                         </button>
                     </div>

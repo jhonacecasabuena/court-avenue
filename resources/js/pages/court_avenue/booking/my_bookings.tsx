@@ -5,20 +5,28 @@ import {
     CalendarDays,
     CheckCircle2,
     ChevronDown,
+    ClipboardList,
     Clock,
     Clock3,
     Copy,
     CreditCard,
+    ExternalLink,
+    Home,
+    Inbox,
+    Landmark,
+    LayoutDashboard,
     LogOut,
     Mail,
     MapPin,
     Menu,
+    QrCode,
     Receipt,
     ReceiptText,
     Search,
     Settings,
     Settings2,
     UserRound,
+    X,
     XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -251,6 +259,7 @@ export default function MyBookings({ bookings }: Props) {
     const [bookingSearch, setBookingSearch] = useState("");
     const [bookingFilter, setBookingFilter] = useState<BookingFilter>("all");
     const [viewedProofs, setViewedProofs] = useState<number[]>([]);
+    const [isPaymentDetailsOpen, setIsPaymentDetailsOpen] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -343,12 +352,25 @@ export default function MyBookings({ bookings }: Props) {
                                         onClick={() =>
                                             setMenuOpen((prev) => !prev)
                                         }
-                                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-[#b0002a]"
+                                        aria-label="Open user menu"
+                                        aria-expanded={menuOpen}
+                                        className="inline-flex items-center gap-2 rounded-full border border-black/20 bg-[#b91c1c] py-1.5 pl-2 pr-3 transition hover:bg-white[#b91c1g]"
                                     >
-                                        <Settings2 className="h-5 w-5" />
+                                        {/* Logged-in user's initials */}
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-[#b91c1c] shadow-sm">
+                                            {auth.user.name
+                                                ?.trim()
+                                                .split(/\s+/)
+                                                .slice(0, 2)
+                                                .map((name) =>
+                                                    name[0].toUpperCase(),
+                                                )
+                                                .join("") || "U"}
+                                        </div>
+
                                         <ChevronDown
                                             size={16}
-                                            className={`transition-transform duration-200 ${
+                                            className={`text-white transition-transform duration-200 ${
                                                 menuOpen ? "rotate-180" : ""
                                             }`}
                                         />
@@ -377,7 +399,9 @@ export default function MyBookings({ bookings }: Props) {
                                                     className="group flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-neutral-700 transition hover:bg-red-50 hover:text-[#b0002a]"
                                                 >
                                                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 transition group-hover:bg-red-100 group-hover:text-[#b0002a]">
-                                                        <ArrowLeft size={18} />
+                                                        <LayoutDashboard
+                                                            size={18}
+                                                        />
                                                     </div>
 
                                                     <div>
@@ -413,7 +437,29 @@ export default function MyBookings({ bookings }: Props) {
                                                         </p>
                                                     </div>
                                                 </Link>
+                                                <Link
+                                                    href="/support/inbox"
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-neutral-700 transition hover:bg-red-50 hover:text-[#b0002a]"
+                                                >
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b0002a] transition group-hover:bg-red-100">
+                                                        <Inbox size={18} />
+                                                    </div>
+
+                                                    <div>
+                                                        <p className="font-semibold">
+                                                            Messages
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Manage customer
+                                                            inquiries
+                                                        </p>
+                                                    </div>
+                                                </Link>
                                                 {/* Divider */}
+
                                                 <div className="my-2 border-t border-neutral-100" />
 
                                                 {/* Logout */}
@@ -451,12 +497,24 @@ export default function MyBookings({ bookings }: Props) {
                                         onClick={() =>
                                             setMenuOpen((prev) => !prev)
                                         }
-                                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-[#b0002a]"
+                                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white py-1.5 pl-2 pr-3 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-[#b0002a]"
                                     >
-                                        <Settings className="h-5 w-5" />
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#b91c1c] text-sm font-bold text-white">
+                                            {auth.user?.name
+                                                ? auth.user.name
+                                                      .trim()
+                                                      .split(/\s+/)
+                                                      .slice(0, 2)
+                                                      .map((name) =>
+                                                          name[0].toUpperCase(),
+                                                      )
+                                                      .join("")
+                                                : "UB"}
+                                        </div>
+
                                         <ChevronDown
                                             size={16}
-                                            className={`transition-transform duration-200 ${
+                                            className={`shrink-0 transition-transform duration-200 ${
                                                 menuOpen ? "rotate-180" : ""
                                             }`}
                                         />
@@ -485,7 +543,7 @@ export default function MyBookings({ bookings }: Props) {
                                                     className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-red-50"
                                                 >
                                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600 transition-colors group-hover:bg-red-100 group-hover:text-[#b0002a]">
-                                                        <ArrowLeft size={19} />
+                                                        <Home size={19} />
                                                     </div>
 
                                                     <div className="min-w-0 flex-1">
@@ -518,6 +576,30 @@ export default function MyBookings({ bookings }: Props) {
                                                         </p>
                                                         <p className="mt-0.5 text-xs text-neutral-500">
                                                             Create a reservation
+                                                        </p>
+                                                    </div>
+                                                </Link>
+
+                                                <Link
+                                                    href="/"
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                        <ClipboardList
+                                                            size={19}
+                                                        />
+                                                    </div>
+
+                                                    <div className="min-w-0 leading-tight">
+                                                        <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                            Send an Inquiry
+                                                        </p>
+
+                                                        <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                            Ask admin a question
                                                         </p>
                                                     </div>
                                                 </Link>
@@ -558,7 +640,7 @@ export default function MyBookings({ bookings }: Props) {
                 </header>
 
                 {/* Main */}
-                <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+                <main className="-mt-5 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
                     {/* Admin Booking Filters */}
                     {/* Booking Filters — Admin and User */}
                     <div className="mb-3 rounded-xl border border-neutral-200 bg-white p-2.5 shadow-sm sm:mb-5 sm:rounded-2xl sm:p-4">
@@ -672,9 +754,9 @@ export default function MyBookings({ bookings }: Props) {
                             </div>
 
                             <h2 className="mt-5 text-lg font-bold text-neutral-900">
-                                {isAdmin && bookingSearch.trim()
+                                {bookingSearch.trim()
                                     ? "No matching bookings"
-                                    : isAdmin && bookingFilter !== "all"
+                                    : bookingFilter !== "all"
                                       ? `No ${bookingFilter} bookings`
                                       : "No bookings yet"}
                             </h2>
@@ -928,14 +1010,8 @@ export default function MyBookings({ bookings }: Props) {
 
                                                     {/* Payment Proof Uploaded */}
                                                     {booking.payment_proof && (
-                                                        <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-neutral-50/70 p-3 sm:col-span-1 sm:flex-1 sm:border-0 sm:bg-transparent sm:p-0">
-                                                            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-green-700">
-                                                                <Receipt
-                                                                    size={14}
-                                                                />
-                                                                Receipt Uploaded
-                                                            </span>
-
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            {/* View Proof in Modal */}
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
@@ -964,6 +1040,8 @@ export default function MyBookings({ bookings }: Props) {
                                                                 />
                                                                 View Proof
                                                             </button>
+
+                                                            {/* Open Proof in New Tab */}
                                                         </div>
                                                     )}
 
@@ -1106,11 +1184,12 @@ export default function MyBookings({ bookings }: Props) {
                                                     {booking.status ===
                                                         "pending" &&
                                                         !booking.payment_proof && (
-                                                            <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 sm:flex-1">
+                                                            <div className="col-span-2 flex flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 sm:flex-1">
+                                                                {/* Payment Status */}
                                                                 <div className="flex min-w-0 items-center gap-2">
                                                                     <Clock3
                                                                         size={
-                                                                            14
+                                                                            15
                                                                         }
                                                                         className={
                                                                             isAdmin
@@ -1118,13 +1197,53 @@ export default function MyBookings({ bookings }: Props) {
                                                                                 : "shrink-0 text-amber-600"
                                                                         }
                                                                     />
-                                                                    <span className="text-[10px] font-medium text-neutral-600">
+
+                                                                    <span className="text-xs font-medium text-neutral-600">
                                                                         {isAdmin
                                                                             ? "Waiting for payment receipt"
                                                                             : "Payment proof required"}
                                                                     </span>
                                                                 </div>
 
+                                                                {/* Payment Details Button */}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setIsPaymentDetailsOpen(
+                                                                            true,
+                                                                        )
+                                                                    }
+                                                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-red-200 bg-white p-2.5 text-left transition hover:border-[#b91c1c] hover:bg-red-50"
+                                                                >
+                                                                    <div className="flex min-w-0 items-center gap-2.5">
+                                                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b91c1c]">
+                                                                            <QrCode className="h-[18px] w-[18px]" />
+                                                                        </div>
+
+                                                                        <div className="min-w-0">
+                                                                            <p className="text-xs font-semibold leading-5 text-gray-900">
+                                                                                Court
+                                                                                Avenue
+                                                                                Payment
+                                                                                Details
+                                                                            </p>
+
+                                                                            <p className="text-[11px] leading-4 text-gray-500">
+                                                                                View
+                                                                                bank
+                                                                                account
+                                                                                and
+                                                                                QR
+                                                                                payment
+                                                                                codes
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <ExternalLink className="h-4 w-4 shrink-0 text-[#b91c1c]" />
+                                                                </button>
+
+                                                                {/* Upload Proof Button */}
                                                                 {!isAdmin && (
                                                                     <button
                                                                         type="button"
@@ -1136,14 +1255,15 @@ export default function MyBookings({ bookings }: Props) {
                                                                                 null,
                                                                             );
                                                                         }}
-                                                                        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#b91c1c] px-3 py-2 text-[10px] font-bold text-white transition hover:bg-[#991b1b]"
+                                                                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#b91c1c] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#991b1b] sm:w-auto sm:self-end"
                                                                     >
                                                                         <Receipt
                                                                             size={
-                                                                                12
+                                                                                14
                                                                             }
                                                                         />
                                                                         Upload
+                                                                        Payment
                                                                         Proof
                                                                     </button>
                                                                 )}
@@ -1353,13 +1473,203 @@ export default function MyBookings({ bookings }: Props) {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="flex justify-end border-t border-neutral-200 px-4 py-3 sm:px-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 px-4 py-3 sm:px-5">
+                            {/* Open Image in New Tab */}
+                            <a
+                                href={selectedProof}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700 transition hover:border-[#b0002a] hover:text-[#b0002a]"
+                            >
+                                <ExternalLink size={14} />
+                                Enlarge Image
+                            </a>
+
+                            {/* Close Button */}
                             <button
                                 type="button"
                                 onClick={() => setSelectedProof(null)}
                                 className="rounded-lg bg-[#b0002a] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#920024]"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Court Avenue Payment Details Modal */}
+            {/* Court Avenue Payment Details Modal */}
+            {isPaymentDetailsOpen && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                    onClick={() => setIsPaymentDetailsOpen(false)}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="payment-details-title"
+                        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-gray-100 bg-red-50 px-5 py-4">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b91c1c] text-white">
+                                    <Landmark className="h-5 w-5" />
+                                </div>
+
+                                <div>
+                                    <h2
+                                        id="payment-details-title"
+                                        className="text-sm font-extrabold text-gray-900"
+                                    >
+                                        Court Avenue Payments
+                                    </h2>
+                                    <p className="mt-0.5 text-xs text-gray-600">
+                                        Payment instructions and account details
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsPaymentDetailsOpen(false)}
+                                aria-label="Close payment details"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-white hover:text-[#b91c1c]"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Scrollable Payment Documents */}
+                        <div className="space-y-4 overflow-y-auto p-5">
+                            {/* Bank Account */}
+                            <section className="rounded-xl border border-gray-200 p-4">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <Landmark className="h-4 w-4 text-[#b91c1c]" />
+                                    <h3 className="text-sm font-bold text-gray-900">
+                                        Bank Transfer
+                                    </h3>
+                                </div>
+
+                                <div className="space-y-3 text-xs">
+                                    <div>
+                                        <p className="text-gray-500">
+                                            Bank Name
+                                        </p>
+                                        <p className="mt-1 font-semibold text-gray-900">
+                                            YOUR BANK NAME
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-gray-500">
+                                            Account Name
+                                        </p>
+                                        <p className="mt-1 font-semibold text-gray-900">
+                                            COURT AVENUE ACCOUNT NAME
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-gray-500">
+                                            Account Number
+                                        </p>
+                                        <p className="mt-1 break-all font-bold tracking-wide text-gray-900">
+                                            YOUR ACCOUNT NUMBER
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* QR Payment Code 1 */}
+                            {/* QR Payment Code 1 */}
+                            <section className="rounded-xl border border-gray-200 p-4">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <QrCode className="h-4 w-4 text-[#b91c1c]" />
+                                    <h3 className="text-sm font-bold text-gray-900">
+                                        QR Payment 1
+                                    </h3>
+                                </div>
+
+                                <div className="flex justify-center rounded-lg bg-gray-50 p-3">
+                                    <img
+                                        src="/images/payment/qr-payment-1.png"
+                                        alt="Court Avenue QR payment code 1"
+                                        className="max-h-64 w-full max-w-64 rounded-lg object-contain"
+                                    />
+                                </div>
+
+                                <p className="mt-2 text-center text-[11px] text-gray-500">
+                                    Scan using your supported payment app.
+                                </p>
+
+                                <div className="mt-3 flex justify-center">
+                                    <a
+                                        href="/images/payment/qr-payment-1.png"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-[#b91c1c] hover:text-[#b91c1c]"
+                                    >
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                        Open QR in New Tab
+                                    </a>
+                                </div>
+                            </section>
+
+                            {/* QR Payment Code 2 */}
+                            {/* QR Payment Code 2 */}
+                            <section className="rounded-xl border border-gray-200 p-4">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <QrCode className="h-4 w-4 text-[#b91c1c]" />
+                                    <h3 className="text-sm font-bold text-gray-900">
+                                        QR Payment 2
+                                    </h3>
+                                </div>
+
+                                <div className="flex justify-center rounded-lg bg-gray-50 p-3">
+                                    <img
+                                        src="/images/payment/qr-payment-2.png"
+                                        alt="Court Avenue QR payment code 2"
+                                        className="max-h-64 w-full max-w-64 rounded-lg object-contain"
+                                    />
+                                </div>
+
+                                <p className="mt-2 text-center text-[11px] text-gray-500">
+                                    Scan using your supported payment app.
+                                </p>
+
+                                <div className="mt-3 flex justify-center">
+                                    <a
+                                        href="/images/payment/qr-payment-2.png"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-[#b91c1c] hover:text-[#b91c1c]"
+                                    >
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                        Open QR in New Tab
+                                    </a>
+                                </div>
+                            </section>
+
+                            {/* Payment Reminder */}
+                            <div className="rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-800">
+                                <strong>Important:</strong> Verify the recipient
+                                and payment amount before sending. After
+                                payment, upload a clear screenshot of your
+                                transaction as proof.
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="border-t border-gray-100 p-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsPaymentDetailsOpen(false)}
+                                className="w-full rounded-lg bg-[#b91c1c] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#991b1b]"
+                            >
+                                Got It — Continue to Upload Proof
                             </button>
                         </div>
                     </div>

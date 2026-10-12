@@ -11,6 +11,10 @@ import {
     MapPin,
     ReceiptText,
     ShieldCheck,
+    Landmark,
+    QrCode,
+    X,
+    ExternalLink,
 } from "lucide-react";
 
 type AuthUser = {
@@ -132,6 +136,7 @@ export default function Checkout({ booking }: Props) {
         string | null
     >(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isPaymentDetailsOpen, setIsPaymentDetailsOpen] = useState(false);
 
     return (
         <>
@@ -206,7 +211,7 @@ export default function Checkout({ booking }: Props) {
 
                         <div className="mt-0 sm:mt-2 flex items-center justify-center sm:justify-start">
                             <div className="rounded-md bg-yellow-50 px-3 py-1.5 text-center text-[11px] font-semibold text-yellow-700 sm:text-left">
-                                Please complete payment within 8 minutes.
+                                Please complete payment within 10 minutes.
                                 <span className="font-bold">
                                     {" "}
                                     Unpaid bookings will be automatically
@@ -321,6 +326,34 @@ export default function Checkout({ booking }: Props) {
                             {/* Payment */}
                             <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                                 <div className="p-3">
+                                    {/* View Court Avenue Payment Details */}
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setIsPaymentDetailsOpen(true)
+                                        }
+                                        className="mb-3 flex w-full items-center justify-between gap-3 rounded-lg border border-red-200 bg-white p-3 text-left transition hover:border-[#b91c1c] hover:bg-red-50"
+                                    >
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b91c1c]">
+                                                <QrCode className="h-5 w-5" />
+                                            </div>
+
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-bold text-gray-900">
+                                                    Court Avenue Payment Details
+                                                </p>
+                                                <p className="mt-0.5 text-[11px] text-gray-600">
+                                                    Click here to view Bank
+                                                    account and
+                                                    <br />
+                                                    QR payment codes
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <ExternalLink className="h-4 w-4 shrink-0 text-[#b91c1c]" />
+                                    </button>
                                     {/* Upload proof */}
                                     <div className="rounded-lg border border-red-200 bg-red-50/50 p-2.5">
                                         <div className="flex items-center gap-2">
@@ -382,8 +415,8 @@ export default function Checkout({ booking }: Props) {
 
                                                     <div className="min-w-0">
                                                         <p className="text-[12px] font-semibold text-gray-800">
-                                                            Choose payment
-                                                            screenshot
+                                                            Attached payment
+                                                            receipt/screenshot
                                                         </p>
                                                         <p className="mt-0.5 text-[11px] text-gray-700">
                                                             Click here to browse
@@ -540,6 +573,188 @@ export default function Checkout({ booking }: Props) {
                         </aside>
                     </div>
                 </main>
+
+                {/* Court Avenue Payment Details Modal */}
+                {isPaymentDetailsOpen && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                        onClick={() => setIsPaymentDetailsOpen(false)}
+                    >
+                        <div
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="payment-details-title"
+                            className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between border-b border-gray-100 bg-red-50 px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b91c1c] text-white">
+                                        <Landmark className="h-5 w-5" />
+                                    </div>
+
+                                    <div>
+                                        <h2
+                                            id="payment-details-title"
+                                            className="text-sm font-extrabold text-gray-900"
+                                        >
+                                            Court Avenue Payments
+                                        </h2>
+                                        <p className="mt-0.5 text-xs text-gray-600">
+                                            Payment instructions and account
+                                            details
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsPaymentDetailsOpen(false)
+                                    }
+                                    aria-label="Close payment details"
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-white hover:text-[#b91c1c]"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            {/* Scrollable Payment Documents */}
+                            <div className="space-y-4 overflow-y-auto p-5">
+                                {/* Bank Account */}
+                                <section className="rounded-xl border border-gray-200 p-4">
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <Landmark className="h-4 w-4 text-[#b91c1c]" />
+                                        <h3 className="text-sm font-bold text-gray-900">
+                                            Bank Transfer
+                                        </h3>
+                                    </div>
+
+                                    <div className="space-y-3 text-xs">
+                                        <div>
+                                            <p className="text-gray-500">
+                                                Bank Name
+                                            </p>
+                                            <p className="mt-1 font-semibold text-gray-900">
+                                                YOUR BANK NAME
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-gray-500">
+                                                Account Name
+                                            </p>
+                                            <p className="mt-1 font-semibold text-gray-900">
+                                                COURT AVENUE ACCOUNT NAME
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-gray-500">
+                                                Account Number
+                                            </p>
+                                            <p className="mt-1 break-all font-bold tracking-wide text-gray-900">
+                                                YOUR ACCOUNT NUMBER
+                                            </p>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* QR Payment Code 1 */}
+                                {/* QR Payment Code 1 */}
+                                <section className="rounded-xl border border-gray-200 p-4">
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <QrCode className="h-4 w-4 text-[#b91c1c]" />
+                                        <h3 className="text-sm font-bold text-gray-900">
+                                            QR Payment 1
+                                        </h3>
+                                    </div>
+
+                                    <div className="flex justify-center rounded-lg bg-gray-50 p-3">
+                                        <img
+                                            src="/images/payment/qr-payment-1.png"
+                                            alt="Court Avenue QR payment code 1"
+                                            className="max-h-64 w-full max-w-64 rounded-lg object-contain"
+                                        />
+                                    </div>
+
+                                    <p className="mt-2 text-center text-[11px] text-gray-500">
+                                        Scan using your supported payment app.
+                                    </p>
+
+                                    <div className="mt-3 flex justify-center">
+                                        <a
+                                            href="/images/payment/qr-payment-1.png"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-[#b91c1c] hover:text-[#b91c1c]"
+                                        >
+                                            <ExternalLink className="h-3.5 w-3.5" />
+                                            Open QR in New Tab
+                                        </a>
+                                    </div>
+                                </section>
+
+                                {/* QR Payment Code 2 */}
+                                {/* QR Payment Code 2 */}
+                                <section className="rounded-xl border border-gray-200 p-4">
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <QrCode className="h-4 w-4 text-[#b91c1c]" />
+                                        <h3 className="text-sm font-bold text-gray-900">
+                                            QR Payment 2
+                                        </h3>
+                                    </div>
+
+                                    <div className="flex justify-center rounded-lg bg-gray-50 p-3">
+                                        <img
+                                            src="/images/payment/qr-payment-2.png"
+                                            alt="Court Avenue QR payment code 2"
+                                            className="max-h-64 w-full max-w-64 rounded-lg object-contain"
+                                        />
+                                    </div>
+
+                                    <p className="mt-2 text-center text-[11px] text-gray-500">
+                                        Scan using your supported payment app.
+                                    </p>
+
+                                    <div className="mt-3 flex justify-center">
+                                        <a
+                                            href="/images/payment/qr-payment-2.png"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-[#b91c1c] hover:text-[#b91c1c]"
+                                        >
+                                            <ExternalLink className="h-3.5 w-3.5" />
+                                            Open QR in New Tab
+                                        </a>
+                                    </div>
+                                </section>
+
+                                {/* Payment Reminder */}
+                                <div className="rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-800">
+                                    <strong>Important:</strong> Verify the
+                                    recipient and payment amount before sending.
+                                    After payment, upload a clear screenshot of
+                                    your transaction as proof.
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="border-t border-gray-100 p-4">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsPaymentDetailsOpen(false)
+                                    }
+                                    className="w-full rounded-lg bg-[#b91c1c] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#991b1b]"
+                                >
+                                    Got It — Continue to Upload Proof
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );

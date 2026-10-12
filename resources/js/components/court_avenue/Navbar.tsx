@@ -111,7 +111,7 @@ export default function Navbar() {
                                 {item.label}
 
                                 {/* Active / hover indicator */}
-                                <span className="absolute bottom-0 left-4 right-4 h-[2px] origin-center scale-x-0 rounded-full bg-[#b0002a] transition-transform duration-200 group-hover:scale-x-100" />
+                                <span className="absolute bottom-5 left-4 right-4 h-[2px] origin-center scale-x-0 rounded-full bg-[#b0002a] transition-transform duration-200 group-hover:scale-x-100" />
                             </a>
                         ))}
                     </div>

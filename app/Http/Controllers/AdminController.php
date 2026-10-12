@@ -36,7 +36,7 @@ class AdminController extends Controller
             ->where('status', 'pending')
             ->where('payment_status', 'pending')
             ->whereNotNull('expires_at')
-            ->where('expires_at', '>=', $now)
+            ->where('expires_at', '<=', $now)
             ->delete();
 
         /*
@@ -263,7 +263,7 @@ class AdminController extends Controller
                 $revenueStart->toDateString(),
                 $revenueEnd->copy()->subDay()->toDateString(),
             ])
-            ->where('bookings.status', '!=', 'pending')
+            ->where('bookings.status', 'confirmed')
             ->where('bookings.payment_status', 'paid')
             ->distinct()
             ->count('bookings.user_id');

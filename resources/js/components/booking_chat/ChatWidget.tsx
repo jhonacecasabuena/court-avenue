@@ -249,6 +249,31 @@ export default function ChatWidget({ onOpenChange }: ChatWidgetProps) {
         loadConversation();
     }, [auth.user?.id]);
 
+    // Automatically refresh conversation every 5 seconds
+    useEffect(() => {
+        let isMounted = true;
+        let isLoading = false;
+
+        const refreshMessages = async () => {
+            if (!isMounted || isLoading) return;
+
+            isLoading = true;
+
+            try {
+                await loadConversation();
+            } finally {
+                isLoading = false;
+            }
+        };
+
+        const interval = setInterval(refreshMessages, 5000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [auth.user?.id]);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({
             behavior: "smooth",

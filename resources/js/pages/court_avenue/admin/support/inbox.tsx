@@ -2,6 +2,7 @@ import { Head, Link } from "@inertiajs/react";
 import axios from "axios";
 import {
     Archive,
+    ArrowLeft,
     ChevronRight,
     Clock3,
     Inbox,
@@ -69,9 +70,48 @@ export default function SupportInbox() {
         }
     }, []);
 
+    // Initial load + automatic refresh every 5 seconds
     useEffect(() => {
-        fetchConversations();
-    }, [fetchConversations]);
+        let isMounted = true;
+        let isFetching = false;
+
+        const loadConversations = async (initial = false) => {
+            if (!isMounted || isFetching) return;
+
+            isFetching = true;
+
+            try {
+                if (initial) {
+                    setLoading(true);
+                }
+
+                const response = await axios.get("/support/inbox/data");
+
+                if (isMounted) {
+                    setConversations(response.data.conversations ?? []);
+                }
+            } catch (error) {
+                console.error("Failed to load support conversations:", error);
+            } finally {
+                isFetching = false;
+
+                if (isMounted && initial) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void loadConversations(true);
+
+        const interval = setInterval(() => {
+            void loadConversations();
+        }, 5000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, []);
 
     const filteredConversations = useMemo(() => {
         const query = search.trim().toLowerCase();
@@ -172,12 +212,12 @@ export default function SupportInbox() {
                                         Refresh
                                     </span>
                                 </button>
-
                                 <Link
                                     href="/admin/dashboard"
-                                    className="hidden h-10 items-center rounded-xl bg-gray-950 px-4 text-sm font-semibold text-white transition hover:bg-gray-800 sm:inline-flex"
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-gray-950 px-3 text-sm font-semibold text-white transition hover:bg-gray-800 sm:hidden"
                                 >
-                                    Dashboard
+                                    <ArrowLeft className="h-4 w-4" />
+                                    <span>Back to Dashboard</span>
                                 </Link>
                             </div>
                         </div>
@@ -247,7 +287,7 @@ export default function SupportInbox() {
                                         onClick={() => setFilter("open")}
                                     >
                                         Open
-                                        {openCount > 0 && (
+                                        {openCount >= 0 && (
                                             <span className="ml-1.5 rounded-full bg-white px-1.5 text-[10px]">
                                                 {openCount}
                                             </span>
@@ -259,6 +299,11 @@ export default function SupportInbox() {
                                         onClick={() => setFilter("closed")}
                                     >
                                         Closed
+                                        {closedCount > 0 && (
+                                            <span className="ml-1.5 rounded-full bg-white px-1.5 text-[10px]">
+                                                {closedCount}
+                                            </span>
+                                        )}
                                     </FilterButton>
                                 </div>
                             </div>
@@ -307,7 +352,7 @@ function StatCard({
     highlight?: boolean;
 }) {
     return (
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-3">
             <div className="flex items-center gap-3">
                 <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${

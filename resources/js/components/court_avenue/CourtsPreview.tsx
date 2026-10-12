@@ -132,7 +132,7 @@ export default function CourtsPreview({ courts }: CourtsPreviewProps) {
                                 <img
                                     src={
                                         court.image ??
-                                        "/images/court_avenue/court.jpg"
+                                        "/images/court_avenue/court2.jpg"
                                     }
                                     alt={`${court.name} - Court Avenue`}
                                     className="
