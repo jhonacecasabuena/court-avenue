@@ -103,7 +103,7 @@ export default function Booking({
 
     return (
         <>
-            <Head title="Book a Court | Court Avenue" />
+            <Head title="Book a Court" />
 
             <div className="min-h-screen bg-gray-50">
                 {/* Top Header */}

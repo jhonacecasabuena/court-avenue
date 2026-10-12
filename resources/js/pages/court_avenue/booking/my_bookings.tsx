@@ -15,6 +15,7 @@ import {
     Inbox,
     Landmark,
     LayoutDashboard,
+    LoaderCircle,
     LogOut,
     Mail,
     MapPin,
@@ -260,6 +261,7 @@ export default function MyBookings({ bookings }: Props) {
     const [bookingFilter, setBookingFilter] = useState<BookingFilter>("all");
     const [viewedProofs, setViewedProofs] = useState<number[]>([]);
     const [isPaymentDetailsOpen, setIsPaymentDetailsOpen] = useState(false);
+    const [isUploadingProof, setIsUploadingProof] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -1399,8 +1401,54 @@ export default function MyBookings({ bookings }: Props) {
                             >
                                 Cancel
                             </button>
-
                             <button
+                                type="button"
+                                disabled={!paymentProof || isUploadingProof}
+                                onClick={() => {
+                                    if (
+                                        !paymentProof ||
+                                        !selectedBooking ||
+                                        isUploadingProof
+                                    ) {
+                                        return;
+                                    }
+
+                                    setIsUploadingProof(true);
+
+                                    router.post(
+                                        "/booking/my-bookings/payment-proof",
+                                        {
+                                            booking_id: selectedBooking.id,
+                                            payment_proof: paymentProof,
+                                        },
+                                        {
+                                            forceFormData: true,
+                                            onSuccess: () => {
+                                                setSelectedBooking(null);
+                                                setPaymentProof(null);
+                                            },
+                                            onFinish: () => {
+                                                setIsUploadingProof(false);
+                                            },
+                                        },
+                                    );
+                                }}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#b0002a] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#920024] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {isUploadingProof ? (
+                                    <>
+                                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        Uploading Proof...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Receipt size={14} />
+                                        Upload Payment Proof
+                                    </>
+                                )}
+                            </button>
+
+                            {/* <button
                                 type="button"
                                 disabled={!paymentProof}
                                 onClick={() => {
@@ -1425,7 +1473,7 @@ export default function MyBookings({ bookings }: Props) {
                                 className="rounded-lg bg-[#b0002a] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#920024] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 Upload Payment Proof
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>

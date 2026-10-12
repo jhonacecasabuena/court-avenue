@@ -15,6 +15,7 @@ import {
     QrCode,
     X,
     ExternalLink,
+    LoaderCircle,
 } from "lucide-react";
 
 type AuthUser = {
@@ -511,7 +512,7 @@ export default function Checkout({ booking }: Props) {
                                         </span>
                                     </div>
 
-                                    <button
+                                    {/* <button
                                         type="button"
                                         disabled={!paymentProof || isSubmitting}
                                         onClick={() => {
@@ -548,6 +549,52 @@ export default function Checkout({ booking }: Props) {
                                             : paymentProof
                                               ? "Submit Booking & Proof"
                                               : "Upload Proof to Continue"}
+                                    </button> */}
+                                    <button
+                                        type="button"
+                                        disabled={!paymentProof || isSubmitting}
+                                        onClick={() => {
+                                            if (!paymentProof || isSubmitting)
+                                                return;
+
+                                            setIsSubmitting(true);
+
+                                            const formData = new FormData();
+                                            formData.append(
+                                                "payment_proof",
+                                                paymentProof,
+                                            );
+
+                                            router.post(
+                                                "/booking/confirm",
+                                                formData,
+                                                {
+                                                    forceFormData: true,
+                                                    onFinish: () => {
+                                                        setIsSubmitting(false);
+                                                    },
+                                                },
+                                            );
+                                        }}
+                                        className={`mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2.5 text-xs font-bold transition ${
+                                            !paymentProof || isSubmitting
+                                                ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                                                : "bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                                        }`}
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                Submitting Payment Proof...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                                {paymentProof
+                                                    ? "Submit Booking & Proof"
+                                                    : "Upload Proof to Continue"}
+                                            </>
+                                        )}
                                     </button>
                                     <div className="mt-2 flex items-start gap-1.5 rounded-md bg-gray-50 p-2">
                                         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600" />
