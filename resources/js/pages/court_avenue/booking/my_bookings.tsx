@@ -72,6 +72,7 @@ type Booking = {
         name: string;
         email: string;
     } | null;
+    customer_name: string;
     subtotal: number | string;
     service_fee: number | string;
     total: number | string;
@@ -129,7 +130,7 @@ const formatDateTime = (date: string | null | undefined) => {
     }
 
     return new Intl.DateTimeFormat("en-US", {
-        month: "short",
+        month: "long",
         day: "numeric",
         year: "numeric",
         hour: "numeric",
@@ -175,33 +176,33 @@ const formatCurrency = (value: number | string) => {
 const getStatus = (booking: Booking) => {
     if (booking.status === "confirmed") {
         return {
-            label: "Booked",
+            label: "BOOKED",
             icon: CheckCircle2,
-            className: "bg-green-50 text-green-700",
+            className: "bg-green-70 text-green-700 tracking-wider",
         };
     }
 
     if (booking.status === "pending") {
         return {
-            label: "Pending",
+            label: "PENDING",
             icon: Clock3,
-            className: "bg-yellow-50 text-yellow-700",
+            className: "bg-yellow-50 text-yellow-700 tracking-wider",
         };
     }
 
     return {
         label: "Cancelled for non-payment",
         icon: XCircle,
-        className: "bg-red-50 text-red-700",
+        className: "bg-red-50 text-red-700 tracking-wider",
     };
 };
 
 const getPaymentStatus = (booking: Booking) => {
     if (booking.payment_status === "paid") {
         return {
-            label: "Confirmed",
+            label: "Paid & Verified",
             icon: CheckCircle2,
-            className: "bg-green-50 text-green-700",
+            className: "bg-green-50 text-green-700 tracking-widest uppercase",
         };
     }
 
@@ -209,7 +210,7 @@ const getPaymentStatus = (booking: Booking) => {
         return {
             label: "Awaiting Confirmation",
             icon: Clock3,
-            className: "bg-yellow-50 text-yellow-700",
+            className: "bg-yellow-50 text-yellow-700 tracking-wider",
         };
     }
 
@@ -217,7 +218,7 @@ const getPaymentStatus = (booking: Booking) => {
         return {
             label: "Payment Pending",
             icon: Clock3,
-            className: "bg-yellow-50 text-yellow-700",
+            className: "bg-yellow-50 text-yellow-700 tracking-wider",
         };
     }
 
@@ -225,14 +226,14 @@ const getPaymentStatus = (booking: Booking) => {
         return {
             label: "Payment Rejected",
             icon: XCircle,
-            className: "bg-red-50 text-red-700",
+            className: "bg-red-50 text-red-700 tracking-wider",
         };
     }
 
     return {
         label: "Expired",
         icon: XCircle,
-        className: "bg-red-50 text-red-700",
+        className: "bg-red-50 text-red-700 tracking-wider",
     };
 };
 
@@ -308,7 +309,8 @@ export default function MyBookings({ bookings }: Props) {
         return (
             booking.booking_reference?.toLowerCase().includes(search) ||
             booking.user?.name?.toLowerCase().includes(search) ||
-            booking.user?.email?.toLowerCase().includes(search) ||
+            booking.user?.name?.toLowerCase().includes(search) ||
+            booking.customer_name?.toLowerCase().includes(search) ||
             booking.items?.some((item) =>
                 item.court?.name?.toLowerCase().includes(search),
             )
@@ -325,7 +327,7 @@ export default function MyBookings({ bookings }: Props) {
 
     return (
         <>
-            <Head title="My Bookings | Court Avenue" />
+            <Head title="My Bookings" />
 
             <div className="min-h-screen bg-neutral-50">
                 {/* Header */}
@@ -699,7 +701,7 @@ export default function MyBookings({ bookings }: Props) {
                                         {filter.label}
 
                                         <span
-                                            className={`rounded-full px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] ${
+                                            className={`rounded-full px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] tracking-wider ${
                                                 active
                                                     ? "bg-white/20 text-white"
                                                     : "bg-neutral-100 text-neutral-600"
@@ -733,6 +735,7 @@ export default function MyBookings({ bookings }: Props) {
                                     }
                                     aria-label="Search bookings"
                                     className="h-9 w-full rounded-lg border border-neutral-200 bg-white pr-10 pl-9 text-xs text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#b91c1c] focus:ring-2 focus:ring-red-100 sm:h-10 sm:rounded-xl sm:text-sm"
+                                    autoFocus
                                 />
 
                                 {bookingSearch && (
@@ -813,7 +816,7 @@ export default function MyBookings({ bookings }: Props) {
                                                         <div className="min-w-0 flex-1">
                                                             {/* Reference */}
                                                             <div className="flex flex-wrap items-center gap-2">
-                                                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-500">
+                                                                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-700">
                                                                     Booking
                                                                     Reference
                                                                 </p>
@@ -844,7 +847,7 @@ export default function MyBookings({ bookings }: Props) {
                                                             </p>
 
                                                             {/* Booking Date */}
-                                                            <div className="mt-3 flex items-center gap-1.5 text-[11px] text-neutral-500">
+                                                            <div className="mt-3 flex font-bold items-center gap-1.5 text-[11px] text-neutral-700">
                                                                 <span>
                                                                     Booked on{" "}
                                                                     {formatDateTime(
@@ -854,7 +857,7 @@ export default function MyBookings({ bookings }: Props) {
                                                             </div>
                                                             {/* Booked By */}
                                                             <div className=" flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                                                                <span className="text-[10px] font-bold tracking-wider text-neutral-400">
+                                                                <span className="text-[10px] font-bold tracking-wider text-neutral-700">
                                                                     Booked By
                                                                 </span>
 
@@ -869,19 +872,40 @@ export default function MyBookings({ bookings }: Props) {
                                                                     ·
                                                                 </span>
 
-                                                                <span className="break-all text-xs text-neutral-500">
+                                                                <span className="hidden sm:block break-all text-xs text-neutral-500">
                                                                     {booking
                                                                         .user
                                                                         ?.email ??
                                                                         "Email unavailable"}
                                                                 </span>
                                                             </div>
+
+                                                            {/* Walk-in Customer — only for confirmed, paid bookings without payment proof */}
+                                                            {booking.status ===
+                                                                "confirmed" &&
+                                                                booking.payment_status ===
+                                                                    "paid" &&
+                                                                !booking.payment_proof &&
+                                                                booking.customer_name && (
+                                                                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                                                                        <span className="text-[10px] font-bold tracking-wider text-neutral-700">
+                                                                            Walk-in
+                                                                            Customer:
+                                                                        </span>
+
+                                                                        <span className="break-words text-xs font-semibold text-neutral-800">
+                                                                            {
+                                                                                booking.customer_name
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                         </div>
                                                     </div>
 
                                                     {/* Booking Status */}
                                                     <div className="flex items-center justify-between gap-3 sm:justify-end">
-                                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 sm:hidden">
+                                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-700 sm:hidden">
                                                             Booking Status
                                                         </span>
 
@@ -908,69 +932,78 @@ export default function MyBookings({ bookings }: Props) {
                                             </div>
 
                                             {/* Booking items */}
+                                            {/* Booking items */}
                                             <div className="divide-y divide-neutral-100">
                                                 {booking.items.map((item) => (
                                                     <div
                                                         key={item.id}
-                                                        className="px-5 py-4 sm:px-6"
+                                                        className="px-4 py-4 sm:px-6"
                                                     >
-                                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                                            <div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <MapPin
-                                                                        size={
-                                                                            16
-                                                                        }
-                                                                        className="text-[#b0002a]"
-                                                                    />
+                                                        <div className="flex items-start justify-between gap-3 sm:items-center">
+                                                            {/* Court and schedule details */}
+                                                            {/* Court and schedule details */}
+                                                            <div className="flex min-w-0 flex-1 items-start gap-2">
+                                                                <MapPin
+                                                                    size={15}
+                                                                    className="mt-0.5 shrink-0 text-[#b91c1c]"
+                                                                />
 
-                                                                    <p className="text-sm font-bold text-neutral-900">
-                                                                        {
-                                                                            item
-                                                                                .court
-                                                                                .name
-                                                                        }
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-900">
-                                                                    <span className="flex items-center gap-1.5">
-                                                                        <CalendarDays
-                                                                            size={
-                                                                                14
+                                                                <div className="min-w-0 flex-1">
+                                                                    {/* Court name and superscript price */}
+                                                                    <div className="flex flex-wrap items-start gap-x-2">
+                                                                        <p className="text-sm font-bold text-neutral-900">
+                                                                            {
+                                                                                item
+                                                                                    .court
+                                                                                    .name
                                                                             }
-                                                                        />
-                                                                        {formatDate(
-                                                                            item.booking_date,
-                                                                        )}
-                                                                    </span>
+                                                                        </p>
 
-                                                                    <span className="flex items-center gap-1.5">
-                                                                        <Clock3
-                                                                            size={
-                                                                                14
+                                                                        <span className="relative -top-1 inline-flex h-6 items-center justify-center rounded-full bg-red-50 px-2 text-[9px] font-extrabold tabular-nums text-[#b91c1c] ring-1 ring-inset ring-red-100">
+                                                                            {formatCurrency(
+                                                                                item.price,
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {/* Date and time aligned with court name */}
+                                                                    <div className="mt-2 flex flex-nowrap items-center justify-between gap-2 whitespace-nowrap text-[12px] font-semibold tracking-wider text-neutral-700 sm:justify-start sm:gap-4 sm:text-sm">
+                                                                        <span className="inline-flex shrink-0 items-center gap-1">
+                                                                            <CalendarDays
+                                                                                size={
+                                                                                    12
+                                                                                }
+                                                                                className="shrink-0 text-neutral-700"
+                                                                            />
+                                                                            {formatDate(
+                                                                                item.booking_date,
+                                                                            )}
+                                                                        </span>
+
+                                                                        <span className="inline-flex shrink-0 items-center gap-1">
+                                                                            <Clock3
+                                                                                size={
+                                                                                    12
+                                                                                }
+                                                                                className="shrink-0 text-neutral-700"
+                                                                            />
+                                                                            {formatTime(
+                                                                                item
+                                                                                    .time_slot
+                                                                                    .start_time,
+                                                                            )}
+                                                                            {
+                                                                                " – "
                                                                             }
-                                                                        />
-                                                                        {formatTime(
-                                                                            item
-                                                                                .time_slot
-                                                                                .start_time,
-                                                                        )}{" "}
-                                                                        –{" "}
-                                                                        {formatTime(
-                                                                            item
-                                                                                .time_slot
-                                                                                .end_time,
-                                                                        )}
-                                                                    </span>
+                                                                            {formatTime(
+                                                                                item
+                                                                                    .time_slot
+                                                                                    .end_time,
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-
-                                                            <p className="text-sm font-bold text-neutral-800">
-                                                                {formatCurrency(
-                                                                    item.price,
-                                                                )}{" "}
-                                                            </p>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -981,10 +1014,10 @@ export default function MyBookings({ bookings }: Props) {
                                                 <div className="grid grid-cols-2 items-center gap-4 sm:flex sm:flex-wrap sm:gap-x-5 sm:gap-y-3">
                                                     {/* Total */}
                                                     <div className="min-w-0">
-                                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-700">
                                                             Total Amount
                                                         </p>
-                                                        <p className="mt-1 text-sm font-black text-neutral-900 sm:text-base">
+                                                        <p className="mt-1 text-sm font-black tracking-wider text-neutral-900 sm:text-base">
                                                             {formatCurrency(
                                                                 booking.total,
                                                             )}
@@ -993,7 +1026,7 @@ export default function MyBookings({ bookings }: Props) {
 
                                                     {/* Payment Status */}
                                                     <div className="min-w-0 sm:border-l sm:border-neutral-200 sm:pl-5">
-                                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-700">
                                                             Payment Status
                                                         </p>
                                                         <div
@@ -1012,8 +1045,7 @@ export default function MyBookings({ bookings }: Props) {
 
                                                     {/* Payment Proof Uploaded */}
                                                     {booking.payment_proof && (
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            {/* View Proof in Modal */}
+                                                        <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-1 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
@@ -1035,15 +1067,15 @@ export default function MyBookings({ bookings }: Props) {
                                                                         `/storage/${booking.payment_proof}`,
                                                                     );
                                                                 }}
-                                                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[10px] font-bold text-neutral-700 transition hover:border-[#b91c1c] hover:text-[#b91c1c]"
+                                                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-[11px] font-bold text-neutral-700 transition hover:border-[#b91c1c] hover:text-[#b91c1c] sm:w-auto"
                                                             >
                                                                 <Receipt
-                                                                    size={13}
+                                                                    size={14}
+                                                                    className="shrink-0"
                                                                 />
-                                                                View Proof
+                                                                View Proof of
+                                                                Payment
                                                             </button>
-
-                                                            {/* Open Proof in New Tab */}
                                                         </div>
                                                     )}
 
@@ -1082,7 +1114,7 @@ export default function MyBookings({ bookings }: Props) {
                                                                             }
 
                                                                             router.patch(
-                                                                                `/admin/bookings/${booking.id}/verify-payment`,
+                                                                                `/bookings/${booking.id}/verify-payment`,
                                                                                 {},
                                                                                 {
                                                                                     preserveScroll: true,
@@ -1667,7 +1699,7 @@ export default function MyBookings({ bookings }: Props) {
                             </section>
 
                             {/* QR Payment Code 2 */}
-                            {/* QR Payment Code 2 */}
+
                             <section className="rounded-xl border border-gray-200 p-4">
                                 <div className="mb-3 flex items-center gap-2">
                                     <QrCode className="h-4 w-4 text-[#b91c1c]" />

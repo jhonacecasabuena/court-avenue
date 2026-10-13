@@ -47,9 +47,17 @@ Route::get('/booking/checkout', [
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/admin/dashboard', [
-    AdminController::class,
-    'index',
-])->name('admin.dashboard');
+        AdminController::class,
+        'index',
+    ])->name('admin.dashboard');
+
+    Route::patch(
+        '/bookings/{booking}/verify-payment',
+        [BookingController::class, 'verifyPayment']
+    )->name('bookings.verify-payment');
+
+    Route::get('/admin/users', [AdminController::class, 'users'])
+    ->name('admin.users');
 
 
 });
@@ -99,7 +107,7 @@ Route::middleware('auth')->group(function () {
         'confirmPaidBooking',
     ])->name('booking.confirm');
 
-        // Upload payment proof from My Bookings
+
     Route::post('/booking/my-bookings/payment-proof', [
         BookingController::class,
         'uploadPaymentProof',

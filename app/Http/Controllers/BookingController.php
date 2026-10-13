@@ -634,8 +634,7 @@ class BookingController extends Controller
         );
     }
 
-
-
+ 
     public function confirmPaidBooking(Request $request)
     {
         $pendingBookingId = $request->session()->get(
@@ -643,14 +642,12 @@ class BookingController extends Controller
         );
 
         if (! $pendingBookingId) {
-
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => 'Your booking session has expired.',
             ]);
 
-            return redirect()
-                ->route('booking.index');
+            return redirect()->route('booking.index');
         }
 
         $user = $request->user();
@@ -659,20 +656,7 @@ class BookingController extends Controller
             return redirect()->route('login');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validate payment proof
-        |--------------------------------------------------------------------------
-        */
-
-        $validated = $request->validate([
-            'payment_proof' => [
-                'required',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:5120',
-            ],
-        ]);
+        $isAdmin = $user->hasRole('admin');
 
         /*
         |--------------------------------------------------------------------------
@@ -691,18 +675,14 @@ class BookingController extends Controller
             ->first();
 
         if (! $booking) {
-            $request->session()->forget(
-                'booking.pending_id'
-            );
-
+            $request->session()->forget('booking.pending_id');
 
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => 'Your booking could not be found.',
             ]);
 
-            return redirect()
-                ->route('booking.index');
+            return redirect()->route('booking.index');
         }
 
         /*
@@ -713,33 +693,20 @@ class BookingController extends Controller
 
         if (
             $booking->status === 'pending' &&
+            $booking->payment_status === 'pending' &&
             $booking->expires_at &&
             $booking->expires_at->isPast()
         ) {
-            // $booking->update([
-            //     'status' => 'cancelled',
-            //     'payment_status' => 'expired',
-            // ]);
-
-            // $request->session()->forget(
-            //     'booking.pending_id'
-            // );
-
             $booking->delete();
 
-            $request->session()->forget(
-                'booking.pending_id'
-            );
+            $request->session()->forget('booking.pending_id');
 
-            
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => 'Your 10-minute payment window has expired. Please select your court and time again.',
             ]);
 
-            return redirect()
-                ->route('booking.index');
-
+            return redirect()->route('booking.index');
         }
 
         /*
@@ -749,12 +716,74 @@ class BookingController extends Controller
         */
 
         if ($booking->status !== 'pending') {
-            return redirect()
-                ->route(
-                    'booking.confirmation',
-                    $booking->booking_reference
-                );
+            $request->session()->forget('booking.pending_id');
+
+            return redirect()->route(
+                'booking.confirmation',
+                $booking->booking_reference
+            );
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADMIN: Confirm walk-in booking and mark as paid
+        |--------------------------------------------------------------------------
+        */
+
+        if ($isAdmin) {
+            $validated = $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                ],
+            ]);
+
+            $booking->update([
+                'customer_name' => trim($validated['name']),
+
+                // No payment screenshot is needed for walk-ins.
+                'payment_proof' => null,
+
+                // Automatically mark the walk-in as paid.
+                'status' => 'confirmed',
+                'payment_status' => 'paid',
+
+                // Keep the payment method compatible with your current setup.
+                'payment_method' => 'manual',
+                'payment_reference' => null,
+
+                // Record when the walk-in was marked as paid.
+                'paid_at' => now('Asia/Manila'),
+
+                // Prevent expiration cleanup from cancelling the booking.
+                'expires_at' => null,
+            ]);
+
+            $request->session()->forget('booking.pending_id');
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => 'Walk-in booking created successfully. Payment is marked as paid and the booking is confirmed.',
+            ]);
+
+            return redirect()->route('booking.my-bookings');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CUSTOMER: Validate payment proof
+        |--------------------------------------------------------------------------
+        */
+
+        $validated = $request->validate([
+            'payment_proof' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+        ]);
 
         /*
         |--------------------------------------------------------------------------
@@ -764,53 +793,24 @@ class BookingController extends Controller
 
         $proofPath = $request
             ->file('payment_proof')
-            ->store(
-                'payment-proofs',
-                'public'
-            );
+            ->store('payment-proofs', 'public');
 
         /*
         |--------------------------------------------------------------------------
-        | Update booking
+        | CUSTOMER: Await admin payment verification
         |--------------------------------------------------------------------------
-        |
-        | IMPORTANT:
-        |
-        | Customer submission does NOT mark the booking as paid.
-        |
         */
 
         $booking->update([
-            'payment_proof' =>
-                $proofPath,
+            'payment_proof' => $proofPath,
+            'status' => 'pending',
+            'payment_status' => 'awaiting_confirmation',
+            'payment_method' => 'manual',
+            'payment_reference' => null,
+            'paid_at' => null,
 
-            'status' =>
-                'pending',
-
-            'payment_status' =>
-                'awaiting_confirmation',
-
-            'payment_method' =>
-                'manual',
-
-            'payment_reference' =>
-                null,
-
-            'paid_at' =>
-                null,
-
-            /*
-            |--------------------------------------------------------------------------
-            | Keep expiration cleared after proof submission?
-            |--------------------------------------------------------------------------
-            |
-            | Since the customer has already submitted payment proof,
-            | the booking should now wait for admin verification.
-            |
-            */
-
-            'expires_at' =>
-                null,
+            // Proof has been submitted, so stop the payment timeout.
+            'expires_at' => null,
         ]);
 
         /*
@@ -819,9 +819,7 @@ class BookingController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $request->session()->forget(
-            'booking.pending_id'
-        );
+        $request->session()->forget('booking.pending_id');
 
         /*
         |--------------------------------------------------------------------------
@@ -829,15 +827,14 @@ class BookingController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Booking submitted! Awaiting payment verification and confirmation',
+            'message' => 'Booking submitted! Awaiting payment verification and confirmation.',
         ]);
 
-        return redirect()
-            ->route('booking.my-bookings');
+        return redirect()->route('booking.my-bookings');
     }
+
 
 
     public function confirmation(
@@ -882,10 +879,7 @@ class BookingController extends Controller
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now())
             ->delete();
-            // ->update([
-            //     'status' => 'cancelled',
-            //     'payment_status' => 'expired',
-            // ]);
+          
 
         /*
         |--------------------------------------------------------------------------
@@ -903,22 +897,11 @@ class BookingController extends Controller
             ])
             ->latest();
 
-        // Regular users can only view their own bookings.
-        // Admins can view all bookings.
         if (! $user->hasRole('admin')) {
             $bookingsQuery->where('user_id', $user->id);
         }
 
         $bookings = $bookingsQuery->get();
-
-        // $bookings = Booking::query()
-        //     ->where('user_id', auth()->id())
-        //     ->with([
-        //         'items.court',
-        //         'items.timeSlot',
-        //     ])
-        //     ->latest()
-        //     ->get();
 
         return Inertia::render(
             'court_avenue/booking/my_bookings',
@@ -954,11 +937,9 @@ class BookingController extends Controller
     }
 
 
-
-    // Admin: Reject a booking because of invalid payment proof
     public function rejectAdmin(Request $request, Booking $booking)
     {
-        // Only admins can reject bookings.
+   
         abort_unless(
             $request->user()->hasRole('admin'),
             403
@@ -983,6 +964,44 @@ class BookingController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => 'Booking cancelled successfully.',
+        ]);
+
+        return redirect()->route('booking.my-bookings');
+    }
+
+
+    public function verifyPayment(Request $request, Booking $booking)
+    {
+
+        abort_unless(
+            $request->user()->hasRole('admin'),
+            403
+        );
+
+
+        if (
+            $booking->status !== 'pending' ||
+            $booking->payment_status !== 'awaiting_confirmation' ||
+            !$booking->payment_proof
+        ) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'This booking cannot be verified. Check its status and payment proof.',
+            ]);
+
+            return redirect()->route('booking.my-bookings');
+        }
+
+        $booking->update([
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+            'paid_at' => now('Asia/Manila'),
+            'expires_at' => null,
+        ]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Payment verified successfully. Booking is now confirmed.',
         ]);
 
         return redirect()->route('booking.my-bookings');

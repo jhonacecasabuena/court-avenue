@@ -16,6 +16,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\SupportConversation;
+use App\Models\Booking;
+use App\Models\BookingItem;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * @property int $id
@@ -54,5 +57,22 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function supportConversations(): HasMany
     {
         return $this->hasMany(SupportConversation::class);
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function bookingItems(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            BookingItem::class,
+            Booking::class,
+            'user_id',
+            'booking_id',
+            'id',
+            'id'
+        );
     }
 }

@@ -1,5 +1,5 @@
 import { Head, usePage, Link, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     ArrowLeft,
     CalendarDays,
@@ -16,12 +16,16 @@ import {
     X,
     ExternalLink,
     LoaderCircle,
+    ChevronDown,
+    LogOut,
 } from "lucide-react";
+import { toast } from "sonner";
 
 type AuthUser = {
     id: number;
     name: string;
     email: string;
+    role: string;
 };
 
 type PageProps = {
@@ -139,17 +143,52 @@ export default function Checkout({ booking }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isPaymentDetailsOpen, setIsPaymentDetailsOpen] = useState(false);
 
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [walkInName, setWalkInName] = useState("");
+
+    const closeMenu = () => {
+        setOpen(false);
+        setUserMenuOpen(false);
+    };
+
+    const backUrl = auth.user?.role === "admin" ? "/admin/dashboard" : "/";
+
+    const handleLogout = () => {
+        closeMenu();
+
+        router.post(
+            "/logout",
+            {},
+            {
+                onSuccess: () => {
+                    toast.success("Logged out successfully", {
+                        description:
+                            "You have been safely signed out of your account.",
+                    });
+                },
+            },
+        );
+    };
+
+    const isAdmin = auth.user?.role === "admin";
+
+    const canSubmit = isAdmin
+        ? walkInName.trim().length > 0
+        : paymentProof !== null;
+
     return (
         <>
-            <Head title="Booking Checkout | Court Avenue" />
+            <Head title="Booking Checkout" />
 
             <div className="min-h-screen bg-gray-50">
                 {/* Header */}
                 <header className="border-b border-red-800 bg-[#b91c1c] text-white">
-                    <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center justify-between px-4">
+                    <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between px-3 sm:px-4 lg:px-5">
                         <div className="flex items-center gap-3">
                             <Link
-                                href="/"
+                                href={backUrl}
                                 className="group flex items-center gap-3 rounded-lg px-1.5 py-1 transition hover:bg-white/10"
                             >
                                 {/* Back icon */}
@@ -159,42 +198,240 @@ export default function Checkout({ booking }: Props) {
 
                                 {/* Title */}
                                 <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-red-100">
+                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-red-100">
                                         Court Avenue
                                     </p>
 
                                     <h1 className="text-sm font-bold leading-tight sm:text-base">
-                                        Checkout
+                                        {auth.user?.role === "admin"
+                                            ? "Book Walk-In"
+                                            : "Book a Court"}
                                     </h1>
                                 </div>
                             </Link>
                         </div>
 
-                        <div className=" items-center sm:flex">
+                        <div className="flex items-center">
                             {auth.user && (
-                                <Link
-                                    href="/booking/my-bookings"
-                                    className="group relative flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 transition-all duration-200 hover:border-white/20 hover:bg-white/10"
-                                >
-                                    {/* Icon */}
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#b91c1c] shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:bg-red-50 group-hover:shadow-md">
-                                        <ClipboardList className="h-4 w-4 transition-transform duration-200 group-hover:-rotate-3" />
-                                    </div>
+                                <div className="relative">
+                                    {/* User avatar trigger */}
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setMenuOpen((prev) => !prev)
+                                        }
+                                        aria-label="Open user menu"
+                                        aria-expanded={menuOpen}
+                                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 py-1.5 pl-2 pr-3 transition hover:bg-white/20"
+                                    >
+                                        {/* Logged-in user's initials */}
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-[#b91c1c] shadow-sm">
+                                            {auth.user.name
+                                                ?.trim()
+                                                .split(/\s+/)
+                                                .slice(0, 2)
+                                                .map((name) =>
+                                                    name[0].toUpperCase(),
+                                                )
+                                                .join("") || "U"}
+                                        </div>
 
-                                    {/* Text */}
-                                    <div className="leading-tight">
-                                        <p className="text-sm font-bold text-white transition-colors duration-200 group-hover:text-red-50">
-                                            My Bookings
-                                        </p>
+                                        <ChevronDown
+                                            size={16}
+                                            className={`text-white transition-transform duration-200 ${
+                                                menuOpen ? "rotate-180" : ""
+                                            }`}
+                                        />
+                                    </button>
 
-                                        <p className="mt-0.5 text-[11px] font-medium text-red-100 transition-colors duration-200 group-hover:text-white">
-                                            View your reservations
-                                        </p>
-                                    </div>
+                                    {/* Popup menu */}
+                                    {menuOpen && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                aria-label="Close user menu"
+                                                className="fixed inset-0 z-40 cursor-default"
+                                                onClick={() =>
+                                                    setMenuOpen(false)
+                                                }
+                                            />
 
-                                    {/* Hover indicator */}
-                                    <span className="absolute bottom-1.5 left-3 right-3 h-0.5 origin-left scale-x-0 rounded-full bg-white transition-transform duration-200 group-hover:scale-x-100" />
-                                </Link>
+                                            <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-neutral-200 bg-white p-2 shadow-xl">
+                                                {/* User information */}
+                                                <div className="flex items-center gap-3 border-b border-neutral-100 px-3 py-3">
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#b91c1c] text-sm font-bold text-white">
+                                                        {auth.user.name
+                                                            ?.trim()
+                                                            .split(/\s+/)
+                                                            .slice(0, 2)
+                                                            .map((name) =>
+                                                                name[0].toUpperCase(),
+                                                            )
+                                                            .join("") || "U"}
+                                                    </div>
+
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-bold text-neutral-900">
+                                                            {auth.user.name}
+                                                        </p>
+                                                        <p className="truncate text-xs text-neutral-500">
+                                                            {auth.user.email}
+                                                        </p>
+                                                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#b91c1c]">
+                                                            {auth.user.role ===
+                                                            "user"
+                                                                ? "Player"
+                                                                : "Administrator"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {auth.user.role === "admin" && (
+                                                    <>
+                                                        <Link
+                                                            href="/admin/dashboard"
+                                                            onClick={() =>
+                                                                setMenuOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                            className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                        >
+                                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                                <ClipboardList
+                                                                    size={19}
+                                                                />
+                                                            </div>
+
+                                                            <div className="min-w-0 leading-tight">
+                                                                <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                                    Dashboard
+                                                                </p>
+
+                                                                <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                                    Go to
+                                                                    Dashboard
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                        <Link
+                                                            href="/support/inbox"
+                                                            onClick={() =>
+                                                                setMenuOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                            className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                        >
+                                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                                <ClipboardList
+                                                                    size={19}
+                                                                />
+                                                            </div>
+
+                                                            <div className="min-w-0 leading-tight">
+                                                                <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                                    Messages
+                                                                </p>
+
+                                                                <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                                    Go to
+                                                                    Customer's
+                                                                    Inquiry
+                                                                </p>
+                                                            </div>
+                                                        </Link>
+                                                    </>
+                                                )}
+
+                                                {/* My Bookings */}
+                                                <Link
+                                                    href="/booking/my-bookings"
+                                                    onClick={() =>
+                                                        setMenuOpen(false)
+                                                    }
+                                                    className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                        <ClipboardList
+                                                            size={19}
+                                                        />
+                                                    </div>
+
+                                                    <div className="min-w-0 leading-tight">
+                                                        <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                            {auth.user.role ===
+                                                            "admin"
+                                                                ? "View All Bookings"
+                                                                : "My Bookings"}
+                                                        </p>
+
+                                                        <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                            {auth.user.role ===
+                                                            "admin"
+                                                                ? "Manage all reservations"
+                                                                : "View your reservations"}
+                                                        </p>
+                                                    </div>
+                                                </Link>
+
+                                                {auth.user.role != "admin" && (
+                                                    <Link
+                                                        href="/"
+                                                        onClick={() =>
+                                                            setMenuOpen(false)
+                                                        }
+                                                        className="group mt-1 flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-red-50"
+                                                    >
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c] transition-colors group-hover:bg-[#b91c1c] group-hover:text-white">
+                                                            <ClipboardList
+                                                                size={19}
+                                                            />
+                                                        </div>
+
+                                                        <div className="min-w-0 leading-tight">
+                                                            <p className="text-sm font-bold text-neutral-800 group-hover:text-[#b91c1c]">
+                                                                Send an Inquiry
+                                                            </p>
+
+                                                            <p className="mt-1 text-[11px] font-medium text-neutral-500">
+                                                                Ask Admin for
+                                                                questions
+                                                            </p>
+                                                        </div>
+                                                    </Link>
+                                                )}
+
+                                                <div className="my-2 border-t border-neutral-100" />
+
+                                                {/* Logout */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setMenuOpen(false);
+                                                        handleLogout();
+                                                    }}
+                                                    className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-red-50"
+                                                >
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500 transition-colors group-hover:bg-red-100 group-hover:text-[#b0002a]">
+                                                        <LogOut size={19} />
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-bold text-neutral-700 transition-colors group-hover:text-[#b0002a]">
+                                                            Log Out
+                                                        </p>
+                                                        <p className="mt-0.5 text-xs text-neutral-500">
+                                                            Sign out of your
+                                                            account
+                                                        </p>
+                                                    </div>
+                                                </button>
+
+                                                {/* My Bookings */}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -328,35 +565,178 @@ export default function Checkout({ booking }: Props) {
                             <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                                 <div className="p-3">
                                     {/* View Court Avenue Payment Details */}
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setIsPaymentDetailsOpen(true)
-                                        }
-                                        className="mb-3 flex w-full items-center justify-between gap-3 rounded-lg border border-red-200 bg-white p-3 text-left transition hover:border-[#b91c1c] hover:bg-red-50"
-                                    >
-                                        <div className="flex min-w-0 items-center gap-3">
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b91c1c]">
-                                                <QrCode className="h-5 w-5" />
-                                            </div>
+                                    {auth.user?.role === "user" && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setIsPaymentDetailsOpen(
+                                                        true,
+                                                    )
+                                                }
+                                                className="mb-3 flex w-full items-center justify-between gap-3 rounded-lg border border-red-200 bg-white p-3 text-left transition hover:border-[#b91c1c] hover:bg-red-50"
+                                            >
+                                                <div className="flex min-w-0 items-center gap-3">
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b91c1c]">
+                                                        <QrCode className="h-5 w-5" />
+                                                    </div>
 
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-bold text-gray-900">
-                                                    Court Avenue Payment Details
-                                                </p>
-                                                <p className="mt-0.5 text-[11px] text-gray-600">
-                                                    Click here to view Bank
-                                                    account and
-                                                    <br />
-                                                    QR payment codes
-                                                </p>
-                                            </div>
-                                        </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold text-gray-900">
+                                                            Court Avenue Payment
+                                                            Details
+                                                        </p>
+                                                        <p className="mt-0.5 text-[11px] text-gray-600">
+                                                            Click here to view
+                                                            Bank account and
+                                                            <br />
+                                                            QR payment codes
+                                                        </p>
+                                                    </div>
+                                                </div>
 
-                                        <ExternalLink className="h-4 w-4 shrink-0 text-[#b91c1c]" />
-                                    </button>
+                                                <ExternalLink className="h-4 w-4 shrink-0 text-[#b91c1c]" />
+                                            </button>
+                                        </>
+                                    )}
                                     {/* Upload proof */}
-                                    <div className="rounded-lg border border-red-200 bg-red-50/50 p-2.5">
+                                    {/* Payment input: users upload proof; admins enter walk-in name */}
+                                    {auth.user?.role === "admin" ? (
+                                        <div className="rounded-lg border border-red-200 bg-red-50/50 p-3">
+                                            <label
+                                                htmlFor="walk_in_name"
+                                                className="mb-2 block text-xs font-bold text-gray-900"
+                                            >
+                                                Walk-In Customer Name
+                                                <span className="ml-1 text-red-600">
+                                                    *
+                                                </span>
+                                            </label>
+
+                                            <input
+                                                id="walk_in_name"
+                                                type="text"
+                                                value={walkInName}
+                                                onChange={(event) =>
+                                                    setWalkInName(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                placeholder="Enter customer's full name"
+                                                maxLength={255}
+                                                required
+                                                autoComplete="name"
+                                                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#b91c1c] focus:ring-2 focus:ring-red-100"
+                                            />
+
+                                            <p className="mt-2 text-[11px] leading-relaxed text-gray-600">
+                                                Walk-in bookings will be marked
+                                                as paid automatically.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-lg border border-red-200 bg-red-50/50 p-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white">
+                                                    <ReceiptText className="h-4 w-4 text-[#b91c1c]" />
+                                                </div>
+
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[12px] font-bold text-gray-900">
+                                                        Upload Proof of Payment
+                                                    </p>
+                                                    <p className="text-[11px] text-gray-700">
+                                                        PNG, JPG or JPEG
+                                                    </p>
+                                                </div>
+
+                                                {paymentProof && (
+                                                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                                                )}
+                                            </div>
+
+                                            <label
+                                                htmlFor="payment_proof"
+                                                className={`mt-2 block cursor-pointer rounded-md border border-dashed p-2 transition ${
+                                                    paymentProof
+                                                        ? "border-green-300 bg-green-50"
+                                                        : "border-gray-300 bg-white hover:border-[#b91c1c] hover:bg-red-50"
+                                                }`}
+                                            >
+                                                {paymentProofPreview ? (
+                                                    <div className="flex items-center gap-3">
+                                                        <img
+                                                            src={
+                                                                paymentProofPreview
+                                                            }
+                                                            alt="Payment proof preview"
+                                                            className="h-16 w-16 shrink-0 rounded-md border border-gray-200 bg-white object-cover"
+                                                        />
+
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-[10px] font-bold text-green-700">
+                                                                Proof selected
+                                                            </p>
+                                                            <p className="mt-0.5 truncate text-[10px] text-gray-600">
+                                                                {
+                                                                    paymentProof?.name
+                                                                }
+                                                            </p>
+                                                            <p className="mt-1 text-[10px] font-semibold text-[#b91c1c]">
+                                                                Click to change
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-3 px-1 py-2">
+                                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-red-50">
+                                                            <ReceiptText className="h-4 w-4 text-[#b91c1c]" />
+                                                        </div>
+
+                                                        <div className="min-w-0">
+                                                            <p className="text-[12px] font-semibold text-gray-800">
+                                                                Attached payment
+                                                                receipt/screenshot
+                                                            </p>
+                                                            <p className="mt-0.5 text-[11px] text-gray-700">
+                                                                Click here to
+                                                                browse files
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <input
+                                                    id="payment_proof"
+                                                    type="file"
+                                                    accept="image/png,image/jpeg,image/jpg"
+                                                    className="hidden"
+                                                    required
+                                                    onChange={(event) => {
+                                                        const file =
+                                                            event.target
+                                                                .files?.[0] ??
+                                                            null;
+
+                                                        setPaymentProof(file);
+
+                                                        if (file) {
+                                                            setPaymentProofPreview(
+                                                                URL.createObjectURL(
+                                                                    file,
+                                                                ),
+                                                            );
+                                                        } else {
+                                                            setPaymentProofPreview(
+                                                                null,
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
+                                    {/* <div className="rounded-lg border border-red-200 bg-red-50/50 p-2.5">
                                         <div className="flex items-center gap-2">
                                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white">
                                                 <ReceiptText className="h-4 w-4 text-[#b91c1c]" />
@@ -454,7 +834,7 @@ export default function Checkout({ booking }: Props) {
                                                 }}
                                             />
                                         </label>
-                                    </div>
+                                    </div> */}
 
                                     {/* Compact verification notice */}
                                 </div>
@@ -552,6 +932,77 @@ export default function Checkout({ booking }: Props) {
                                     </button> */}
                                     <button
                                         type="button"
+                                        disabled={!canSubmit || isSubmitting}
+                                        onClick={() => {
+                                            if (!canSubmit || isSubmitting)
+                                                return;
+
+                                            setIsSubmitting(true);
+
+                                            const formData = new FormData();
+
+                                            if (isAdmin) {
+                                                formData.append(
+                                                    "name",
+                                                    walkInName.trim(),
+                                                );
+                                            } else if (paymentProof) {
+                                                formData.append(
+                                                    "payment_proof",
+                                                    paymentProof,
+                                                );
+                                            }
+
+                                            router.post(
+                                                "/booking/confirm",
+                                                formData,
+                                                {
+                                                    forceFormData: true,
+
+                                                    onSuccess: () => {},
+
+                                                    onError: (errors) => {
+                                                        Object.values(
+                                                            errors,
+                                                        ).forEach((error) => {
+                                                            toast.error(
+                                                                String(error),
+                                                            );
+                                                        });
+                                                    },
+
+                                                    onFinish: () => {
+                                                        setIsSubmitting(false);
+                                                    },
+                                                },
+                                            );
+                                        }}
+                                        className={`mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2.5 text-xs font-bold transition ${
+                                            !canSubmit || isSubmitting
+                                                ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                                                : "bg-[#b91c1c] text-white hover:bg-[#991b1b]"
+                                        }`}
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                {isAdmin
+                                                    ? "Creating Walk-In Booking..."
+                                                    : "Submitting Payment Proof..."}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                                {isAdmin
+                                                    ? "Confirm Walk-In Booking"
+                                                    : paymentProof
+                                                      ? "Submit Booking & Proof"
+                                                      : "Upload Proof to Continue"}
+                                            </>
+                                        )}
+                                    </button>
+                                    {/* <button
+                                        type="button"
                                         disabled={!paymentProof || isSubmitting}
                                         onClick={() => {
                                             if (!paymentProof || isSubmitting)
@@ -595,26 +1046,32 @@ export default function Checkout({ booking }: Props) {
                                                     : "Upload Proof to Continue"}
                                             </>
                                         )}
-                                    </button>
+                                    </button> */}
                                     <div className="mt-2 flex items-start gap-1.5 rounded-md bg-gray-50 p-2">
                                         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600" />
+
                                         <p className="text-[10px] leading-relaxed text-gray-600">
-                                            Your booking remains{" "}
-                                            <span className="font-semibold text-yellow-700">
-                                                Pending
-                                            </span>{" "}
-                                            until Court Avenue verifies your
-                                            payment.
+                                            {isAdmin ? (
+                                                <>
+                                                    Walk-in bookings will be
+                                                    marked as{" "}
+                                                    <span className="font-semibold text-green-700">
+                                                        Paid and Verified
+                                                    </span>{" "}
+                                                    upon successful creation.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Your booking remains{" "}
+                                                    <span className="font-semibold text-yellow-700">
+                                                        Pending
+                                                    </span>{" "}
+                                                    until Court Avenue verifies
+                                                    your payment.
+                                                </>
+                                            )}
                                         </p>
                                     </div>
-                                    <p className="mt-2 text-center text-[10px] leading-relaxed text-gray-500">
-                                        By continuing, you agree to the Court
-                                        Avenue booking{" "}
-                                        <span className="text-red-600 underline">
-                                            terms and conditions
-                                        </span>
-                                        .
-                                    </p>
                                 </div>
                             </section>
                         </aside>

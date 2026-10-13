@@ -210,9 +210,9 @@ export default function CourtSchedule({
                                                             court.id,
                                                         );
                                                     }}
-                                                    className={`h-9 w-full rounded text-[11px] font-semibold leading-none transition ${
+                                                    className={`tracking-wider h-9 w-full rounded text-[11px] font-semibold leading-none transition ${
                                                         status === "confirmed"
-                                                            ? "cursor-not-allowed bg-gray-100 text-gray-700"
+                                                            ? "cursor-not-allowed bg-green-800 text-white"
                                                             : status ===
                                                                 "pending"
                                                               ? "cursor-not-allowed bg-yellow-50 text-yellow-700"
@@ -237,7 +237,7 @@ export default function CourtSchedule({
                                                     {status === "confirmed"
                                                         ? "BOOKED"
                                                         : status === "pending"
-                                                          ? "Pending"
+                                                          ? "PENDING"
                                                           : status === "closed"
                                                             ? "CLOSED"
                                                             : selected

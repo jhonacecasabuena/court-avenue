@@ -14,6 +14,7 @@ import {
 import { motion } from "motion/react";
 
 import type { Auth } from "@/types";
+import MonthlyRevenueChart from "@/components/court_avenue/MontlyRevenueStat";
 
 type ChatPageProps = {
     auth: Auth;
@@ -32,6 +33,10 @@ type ChatPageProps = {
         canGoNext: boolean;
     };
     activeMembers: number;
+    revenueHistory: {
+        month: string;
+        amount: number;
+    }[];
 };
 
 const stats = [
@@ -70,10 +75,12 @@ export default function Dashboard() {
         auth,
         bookingStats: rawBookingStats,
         revenueStats: rawRevenueStats,
+        revenueHistory: rawRevenueHistory,
         activeMembers: rawActiveMembers,
     } = usePage<ChatPageProps>().props;
 
     const activeMembers = Number(rawActiveMembers ?? 0);
+    const revenueHistory = rawRevenueHistory ?? [];
 
     const bookingStats = {
         total: Number(rawBookingStats?.total ?? 0),
@@ -176,7 +183,7 @@ export default function Dashboard() {
                                 {auth.user?.role?.split(" ")[0] ?? "Admin"}
                             </h1>
 
-                            <p className="mt-1 text-sm text-gray-500">
+                            <p className="mt-1 text-sm text-gray-700">
                                 Here's what's happening at Court Avenue today.
                             </p>
                         </div>
@@ -207,23 +214,27 @@ export default function Dashboard() {
                                 <MessageCircle className="h-4 w-4" />
                                 Inbox
                             </button>
+                            <button
+                                onClick={() => router.get("/admin/users")}
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#b91c1c] px-4 text-sm font-semibold text-white shadow-lg shadow-red-900/10 transition hover:bg-red-800"
+                            >
+                                <MessageCircle className="h-4 w-4" />
+                                Users
+                            </button>
                         </div>
                     </motion.div>
 
                     {/* Stats */}
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
                         {stats.map((stat, index) => {
                             const Icon = stat.icon;
 
                             const isTotalBookings =
                                 stat.title === "Total Bookings";
-
                             const isTodayBookings =
                                 stat.title === "Today's Bookings";
-
                             const isTotalRevenue =
                                 stat.title === "Total Revenue";
-
                             const isActiveMembers =
                                 stat.title === "Active Members";
 
@@ -248,52 +259,59 @@ export default function Dashboard() {
                             return (
                                 <motion.div
                                     key={stat.title}
-                                    initial={{ opacity: 0, y: 20 }}
+                                    initial={{ opacity: 0, y: 14 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{
-                                        duration: 0.4,
-                                        delay: index * 0.08,
+                                        duration: 0.35,
+                                        delay: index * 0.06,
                                     }}
-                                    className="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                                    className="group min-w-0 rounded-xl border border-gray-200/80 bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md sm:rounded-2xl sm:p-4 lg:p-5"
                                 >
-                                    {/* Icon and actions */}
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-[#b91c1c]">
-                                            <Icon className="h-5 w-5" />
+                                    {/* Compact heading */}
+                                    <div className="flex min-w-0 items-center justify-between gap-2">
+                                        <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#b91c1c] ring-1 ring-inset ring-red-100/80 sm:h-9 sm:w-9">
+                                                <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                                            </div>
+
+                                            <p className="truncate text-xs font-semibold text-gray-600 sm:text-sm">
+                                                {stat.title}
+                                            </p>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            aria-label={`More options for ${stat.title}`}
-                                            className="text-gray-400 opacity-0 transition group-hover:opacity-100 hover:text-gray-700"
-                                        >
-                                            <MoreHorizontal className="h-5 w-5" />
-                                        </button>
+                                        {isActiveMembers && (
+                                            <span className="hidden shrink-0 rounded-full bg-green-50 px-2 py-1 text-[10px] font-semibold text-green-700 sm:inline-flex">
+                                                Active
+                                            </span>
+                                        )}
                                     </div>
 
-                                    {/* Title */}
-                                    <p className="mt-5 text-sm font-medium text-gray-500">
-                                        {stat.title}
-                                    </p>
-
-                                    {/* Value and percentage */}
-                                    <div className="mt-1 flex items-end justify-between gap-3">
-                                        <p className="text-2xl font-bold tracking-tight text-gray-950">
+                                    {/* Main statistic */}
+                                    <div className="mt-3 flex min-w-0 items-center justify-between gap-2 sm:mt-4">
+                                        <p
+                                            className={`min-w-0 truncate font-bold tracking-wider text-gray-950 ${
+                                                isTotalRevenue
+                                                    ? "text-xl sm:text-2xl"
+                                                    : "text-2xl sm:text-3xl"
+                                            }`}
+                                        >
                                             {displayValue}
                                         </p>
 
                                         {!isTotalBookings &&
                                             !isTodayBookings &&
                                             !isTotalRevenue && (
-                                                <span className="mb-1 shrink-0 rounded-full bg-green-50 px-2 py-1 text-[11px] font-bold text-green-700">
-                                                    {stat.change}
+                                                <span
+                                                    className={`shrink-0 rounded-md px-1.5 py-1 text-[10px] font-bold sm:text-[11px] ${changeColor}`}
+                                                >
+                                                    {changeLabel}
                                                 </span>
                                             )}
                                     </div>
 
-                                    {/* Total Revenue month navigation */}
+                                    {/* Revenue month selector */}
                                     {isTotalRevenue ? (
-                                        <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+                                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-2">
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -305,12 +323,12 @@ export default function Dashboard() {
                                                     !revenueStats.previousMonth
                                                 }
                                                 aria-label="View previous month's revenue"
-                                                className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-30"
+                                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-red-50 hover:text-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-30"
                                             >
                                                 <ChevronLeft className="h-4 w-4" />
                                             </button>
 
-                                            <span className="text-xs font-medium text-gray-600">
+                                            <span className="min-w-0 truncate text-center text-[11px] font-medium text-gray-600 sm:text-xs">
                                                 {formatRevenueMonth(
                                                     revenueStats.month,
                                                 )}
@@ -327,38 +345,37 @@ export default function Dashboard() {
                                                     !revenueStats.canGoNext
                                                 }
                                                 aria-label="View next month's revenue"
-                                                className="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-30"
+                                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-600 transition hover:bg-red-50 hover:text-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-30"
                                             >
                                                 <ChevronRight className="h-4 w-4" />
                                             </button>
                                         </div>
                                     ) : isTotalBookings ? (
-                                        /* Pending and confirmed breakdown */
-                                        <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                                        /* Booking breakdown */
+                                        <div className="mt-3 space-y-2 border-t border-gray-100 pt-2.5">
                                             <div className="flex items-center justify-between gap-2">
-                                                <span className="text-xs text-amber-600">
-                                                    Awaiting confirmation /
+                                                <span className="tracking-wider min-w-0 truncate text-[11px] text-amber-600 sm:text-xs">
                                                     Pending
                                                 </span>
 
-                                                <span className="text-sm font-bold text-amber-600">
+                                                <span className="shrink-0 text-xs font-bold text-amber-600 sm:text-sm">
                                                     {bookingStats.pending.toLocaleString()}
                                                 </span>
                                             </div>
 
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs text-green-600">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[11px] text-green-600 tracking-wider sm:text-xs">
                                                     Confirmed
                                                 </span>
 
-                                                <span className="text-sm font-bold text-green-600">
+                                                <span className="shrink-0 text-xs font-bold text-green-600 sm:text-sm">
                                                     {bookingStats.confirmed.toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>
                                     ) : (
-                                        /* Other card descriptions */
-                                        <p className="mt-1 text-xs text-gray-400">
+                                        /* Supporting description */
+                                        <p className="mt-1.5 truncate text-[11px] text-gray-600 sm:text-xs">
                                             {isTodayBookings
                                                 ? `Compared with yesterday (${bookingStats.yesterday.toLocaleString()})`
                                                 : stat.description}
@@ -369,7 +386,11 @@ export default function Dashboard() {
                         })}
                     </div>
 
-                    {/* Main Grid */}
+                    <MonthlyRevenueChart
+                        data={revenueHistory}
+                        selectedMonth={revenueStats.month}
+                        selectedAmount={revenueStats.amount}
+                    />
                 </div>
             </div>
         </>

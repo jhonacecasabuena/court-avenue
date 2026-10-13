@@ -58,11 +58,11 @@ const mainNavItems: NavItem[] = [
         href: "/admin/users",
         icon: Users,
     },
-    {
-        title: "Tournaments",
-        href: "/admin/tournaments",
-        icon: Trophy,
-    },
+    // {
+    //     title: "Tournaments",
+    //     href: "/admin/tournaments",
+    //     icon: Trophy,
+    // },
     // {
     //     title: "Courts",
     //     href: "/admin/courts",

@@ -473,8 +473,7 @@ export default function Booking({
                 <div className="mx-auto w-full max-w-[1400px] px-3 pb-5 sm:px-4 lg:px-5">
                     <div className="flex flex-col gap-1 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
                         <p className="text-[12px] text-gray-400">
-                            Court Avenue · Play more. Book easier. Stay
-                            connected.
+                            Court Avenue · Your Game. Your Court . Your Avenue
                         </p>
 
                         <p className="text-[9px] text-gray-400">
