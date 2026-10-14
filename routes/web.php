@@ -32,12 +32,12 @@ Route::post('/booking/checkout', [
     'checkout',
 ])->name('booking.checkout.store');
 
-// // Checkout page
-// // This will be the destination after login/register.
-// Route::get('/booking/placing-order', [
-//     BookingController::class,
-//     'checkoutPage',
-// ])->name('booking.checkout');
+// Checkout page
+// This will be the destination after login/register.
+Route::get('/booking/placing-order', [
+    BookingController::class,
+    'checkoutPage',
+])->name('booking.checkout');
 
 
 // ============================================================
@@ -120,7 +120,26 @@ Route::middleware('auth')->group(function () {
     'confirmation',
 ])->name('booking.confirmation');
 
-    
+    // Booking availability
+    //
+    // Later this will be handled by BookingController.
+    // It will return available/booked courts for the
+    // selected dates and time slots.
+    //
+    // Route::get('/booking/availability', [
+    //     BookingController::class,
+    //     'availability',
+    // ])->name('booking.availability');
+
+
+    // Create booking
+    //
+    // Route::post('/booking', [
+    //     BookingController::class,
+    //     'store',
+    // ])
+    //     ->middleware('verified')
+    //     ->name('booking.store');
 
 
     // ========================================================
