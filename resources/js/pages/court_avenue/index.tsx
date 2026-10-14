@@ -80,7 +80,7 @@ export default function Index({ courts }: Props) {
                 <Footer />
 
                 {/* Chat Widget */}
-                <ChatWidget onOpenChange={setIsChatOpen} />
+                {/* <ChatWidget onOpenChange={setIsChatOpen} /> */}
 
                 {/* Scroll To Top */}
                 <AnimatePresence>
