@@ -32,12 +32,12 @@ Route::post('/booking/checkout', [
     'checkout',
 ])->name('booking.checkout.store');
 
-// Checkout page
-// This will be the destination after login/register.
-Route::get('/booking/checkout', [
-    BookingController::class,
-    'checkoutPage',
-])->name('booking.checkout');
+// // Checkout page
+// // This will be the destination after login/register.
+// Route::get('/booking/placing-order', [
+//     BookingController::class,
+//     'checkoutPage',
+// ])->name('booking.checkout');
 
 
 // ============================================================

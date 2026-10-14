@@ -736,105 +736,6 @@ export default function Checkout({ booking }: Props) {
                                             </label>
                                         </div>
                                     )}
-                                    {/* <div className="rounded-lg border border-red-200 bg-red-50/50 p-2.5">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white">
-                                                <ReceiptText className="h-4 w-4 text-[#b91c1c]" />
-                                            </div>
-
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-[12px] font-bold text-gray-900">
-                                                    Upload Proof of Payment
-                                                </p>
-                                                <p className="text-[11px] text-gray-700">
-                                                    PNG, JPG or JPEG
-                                                </p>
-                                            </div>
-
-                                            {paymentProof && (
-                                                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
-                                            )}
-                                        </div>
-
-                                        <label
-                                            htmlFor="payment_proof"
-                                            className={`mt-2 block cursor-pointer rounded-md border border-dashed p-2 transition ${
-                                                paymentProof
-                                                    ? "border-green-300 bg-green-50"
-                                                    : "border-gray-300 bg-white hover:border-[#b91c1c] hover:bg-red-50"
-                                            }`}
-                                        >
-                                            {paymentProofPreview ? (
-                                                <div className="flex items-center gap-3">
-                                                    <img
-                                                        src={
-                                                            paymentProofPreview
-                                                        }
-                                                        alt="Payment proof preview"
-                                                        className="h-16 w-16 shrink-0 rounded-md border border-gray-200 bg-white object-cover"
-                                                    />
-
-                                                    <div className="min-w-0 flex-1">
-                                                        <p className="text-[10px] font-bold text-green-700">
-                                                            Proof selected
-                                                        </p>
-                                                        <p className="mt-0.5 truncate text-[10px] text-gray-600">
-                                                            {paymentProof
-                                                                ? paymentProof.name
-                                                                : "PNG, JPG or JPEG"}
-                                                        </p>
-                                                        <p className="mt-1 text-[10px] font-semibold text-[#b91c1c]">
-                                                            Click to change
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-3 px-1 py-2">
-                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-red-50">
-                                                        <ReceiptText className="h-4 w-4 text-[#b91c1c]" />
-                                                    </div>
-
-                                                    <div className="min-w-0">
-                                                        <p className="text-[12px] font-semibold text-gray-800">
-                                                            Attached payment
-                                                            receipt/screenshot
-                                                        </p>
-                                                        <p className="mt-0.5 text-[11px] text-gray-700">
-                                                            Click here to browse
-                                                            files
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <input
-                                                id="payment_proof"
-                                                type="file"
-                                                accept="image/png,image/jpeg,image/jpg"
-                                                className="hidden"
-                                                required
-                                                onChange={(event) => {
-                                                    const file =
-                                                        event.target
-                                                            .files?.[0] ?? null;
-
-                                                    setPaymentProof(file);
-
-                                                    if (file) {
-                                                        setPaymentProofPreview(
-                                                            URL.createObjectURL(
-                                                                file,
-                                                            ),
-                                                        );
-                                                    } else {
-                                                        setPaymentProofPreview(
-                                                            null,
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                        </label>
-                                    </div> */}
 
                                     {/* Compact verification notice */}
                                 </div>
@@ -892,44 +793,6 @@ export default function Checkout({ booking }: Props) {
                                         </span>
                                     </div>
 
-                                    {/* <button
-                                        type="button"
-                                        disabled={!paymentProof || isSubmitting}
-                                        onClick={() => {
-                                            if (!paymentProof) return;
-
-                                            setIsSubmitting(true);
-
-                                            const formData = new FormData();
-                                            formData.append(
-                                                "payment_proof",
-                                                paymentProof,
-                                            );
-
-                                            router.post(
-                                                "/booking/confirm",
-                                                formData,
-                                                {
-                                                    forceFormData: true,
-                                                    onFinish: () => {
-                                                        setIsSubmitting(false);
-                                                    },
-                                                },
-                                            );
-                                        }}
-                                        className={`mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2.5 text-xs font-bold transition ${
-                                            !paymentProof || isSubmitting
-                                                ? "cursor-not-allowed bg-gray-300 text-gray-500"
-                                                : "bg-[#b91c1c] text-white hover:bg-[#991b1b]"
-                                        }`}
-                                    >
-                                        <CheckCircle2 className="h-3.5 w-3.5" />
-                                        {isSubmitting
-                                            ? "Submitting..."
-                                            : paymentProof
-                                              ? "Submit Booking & Proof"
-                                              : "Upload Proof to Continue"}
-                                    </button> */}
                                     <button
                                         type="button"
                                         disabled={!canSubmit || isSubmitting}
@@ -1001,52 +864,7 @@ export default function Checkout({ booking }: Props) {
                                             </>
                                         )}
                                     </button>
-                                    {/* <button
-                                        type="button"
-                                        disabled={!paymentProof || isSubmitting}
-                                        onClick={() => {
-                                            if (!paymentProof || isSubmitting)
-                                                return;
 
-                                            setIsSubmitting(true);
-
-                                            const formData = new FormData();
-                                            formData.append(
-                                                "payment_proof",
-                                                paymentProof,
-                                            );
-
-                                            router.post(
-                                                "/booking/confirm",
-                                                formData,
-                                                {
-                                                    forceFormData: true,
-                                                    onFinish: () => {
-                                                        setIsSubmitting(false);
-                                                    },
-                                                },
-                                            );
-                                        }}
-                                        className={`mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2.5 text-xs font-bold transition ${
-                                            !paymentProof || isSubmitting
-                                                ? "cursor-not-allowed bg-gray-300 text-gray-500"
-                                                : "bg-[#b91c1c] text-white hover:bg-[#991b1b]"
-                                        }`}
-                                    >
-                                        {isSubmitting ? (
-                                            <>
-                                                <LoaderCircle className="h-4 w-4 animate-spin" />
-                                                Submitting Payment Proof...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                                {paymentProof
-                                                    ? "Submit Booking & Proof"
-                                                    : "Upload Proof to Continue"}
-                                            </>
-                                        )}
-                                    </button> */}
                                     <div className="mt-2 flex items-start gap-1.5 rounded-md bg-gray-50 p-2">
                                         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600" />
 
