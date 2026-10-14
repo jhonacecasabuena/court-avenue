@@ -389,7 +389,7 @@ class AdminController extends Controller
             // Total bookings, excluding cancelled bookings.
             ->withCount([
                 'bookings as total_bookings' => function ($query) {
-                    $query->whereIn('status', ['pending', 'confirmed']);
+                    $query->whereIn('status', ['confirmed']);
                 },
             ])
 
@@ -449,7 +449,7 @@ class AdminController extends Controller
             })
 
             ->latest('users.created_at')
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         return Inertia::render('court_avenue/admin/users', [

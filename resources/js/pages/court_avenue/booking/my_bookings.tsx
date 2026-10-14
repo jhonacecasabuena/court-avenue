@@ -202,7 +202,8 @@ const getPaymentStatus = (booking: Booking) => {
         return {
             label: "Paid & Verified",
             icon: CheckCircle2,
-            className: "bg-green-50 text-green-700 tracking-widest uppercase",
+            className:
+                "bg-green-50 text-green-700 font-bold tracking-widest uppercase",
         };
     }
 
@@ -1079,7 +1080,94 @@ export default function MyBookings({ bookings }: Props) {
                                                         </div>
                                                     )}
 
-                                                    {/* Admin Verify Payment */}
+                                                    {booking.status ===
+                                                        "confirmed" &&
+                                                        booking.payment_status ===
+                                                            "paid" && (
+                                                            <div className="col-span-2 flex w-full flex-col gap-2 sm:col-span-1 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+                                                                {auth.user
+                                                                    ?.role ===
+                                                                "admin" ? (
+                                                                    booking.payment_proof ? (
+                                                                        <p className="text-xs leading-relaxed text-neutral-700 sm:col-span-2">
+                                                                            <span className="font-semibold tracking-wider text-green-700">
+                                                                                Receipt
+                                                                                Verified!
+                                                                            </span>
+                                                                            <br />
+                                                                            You
+                                                                            have
+                                                                            verified
+                                                                            the
+                                                                            payment
+                                                                            receipt
+                                                                            for
+                                                                            this
+                                                                            booking.
+                                                                            The
+                                                                            booking
+                                                                            is
+                                                                            marked
+                                                                            as
+                                                                            paid
+                                                                            and
+                                                                            confirmed.
+                                                                        </p>
+                                                                    ) : (
+                                                                        <p className="text-xs leading-relaxed text-neutral-700 sm:col-span-2">
+                                                                            <span className="font-semibold tracking-wider text-blue-700">
+                                                                                Walk-In
+                                                                                Booking
+                                                                            </span>
+                                                                            <br />
+                                                                            You
+                                                                            created
+                                                                            this
+                                                                            walk-in
+                                                                            booking
+                                                                            directly.
+                                                                            No
+                                                                            payment
+                                                                            receipt
+                                                                            was
+                                                                            uploaded
+                                                                            for
+                                                                            this
+                                                                            booking.
+                                                                        </p>
+                                                                    )
+                                                                ) : (
+                                                                    <p className="text-xs leading-relaxed text-neutral-700 sm:col-span-2">
+                                                                        <span className="font-semibold text-[#b91c1c]">
+                                                                            Thank
+                                                                            you
+                                                                            for
+                                                                            booking
+                                                                            with
+                                                                            Court
+                                                                            Avenue!
+                                                                        </span>
+                                                                        <br />
+                                                                        Please
+                                                                        present
+                                                                        your
+                                                                        booking
+                                                                        reference
+                                                                        to the
+                                                                        front
+                                                                        desk
+                                                                        upon
+                                                                        arrival
+                                                                        for
+                                                                        check-in.
+                                                                        Enjoy
+                                                                        your
+                                                                        game!
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        )}
+
                                                     {/* Admin Booking Actions */}
                                                     {isAdmin &&
                                                         booking.status ===
