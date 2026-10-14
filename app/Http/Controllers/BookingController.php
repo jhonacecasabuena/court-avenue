@@ -81,9 +81,10 @@ class BookingController extends Controller
 
     public function index(): Response
     {
-        $startedAt = microtime(true);
+        $totalStartedAt = microtime(true);
 
-        $queryStartedAt = microtime(true);
+        // 1. Delete expired unpaid bookings.
+        $startedAt = microtime(true);
 
         $deleted = Booking::query()
             ->where('status', 'pending')
@@ -92,34 +93,42 @@ class BookingController extends Controller
             ->where('expires_at', '<=', now())
             ->delete();
 
-        logger()->info('Booking page: expired cleanup', [
-            'seconds' => round(microtime(true) - $queryStartedAt, 3),
-            'deleted' => $deleted,
-        ]);
+        error_log(
+            'Booking page: expired cleanup - ' .
+            round(microtime(true) - $startedAt, 3) .
+            ' seconds; deleted: ' . $deleted
+        );
 
-        $queryStartedAt = microtime(true);
+        // 2. Fetch available courts.
+        $startedAt = microtime(true);
 
         $courts = Court::query()
             ->where('status', 'available')
             ->orderBy('id')
             ->get();
 
-        logger()->info('Booking page: courts', [
-            'seconds' => round(microtime(true) - $queryStartedAt, 3),
-        ]);
+        error_log(
+            'Booking page: courts - ' .
+            round(microtime(true) - $startedAt, 3) .
+            ' seconds; count: ' . $courts->count()
+        );
 
-        $queryStartedAt = microtime(true);
+        // 3. Fetch active time slots.
+        $startedAt = microtime(true);
 
         $timeSlots = TimeSlot::query()
             ->where('is_active', true)
             ->orderBy('start_time')
             ->get();
 
-        logger()->info('Booking page: time slots', [
-            'seconds' => round(microtime(true) - $queryStartedAt, 3),
-        ]);
+        error_log(
+            'Booking page: time slots - ' .
+            round(microtime(true) - $startedAt, 3) .
+            ' seconds; count: ' . $timeSlots->count()
+        );
 
-        $queryStartedAt = microtime(true);
+        // 4. Fetch booked slots.
+        $startedAt = microtime(true);
 
         $bookedSlots = BookingItem::query()
             ->whereDate('booking_date', '>=', now()->toDateString())
@@ -143,17 +152,22 @@ class BookingController extends Controller
             })
             ->values();
 
-        logger()->info('Booking page: booked slots', [
-            'seconds' => round(microtime(true) - $queryStartedAt, 3),
-            'count' => $bookedSlots->count(),
-        ]);
+        error_log(
+            'Booking page: booked slots - ' .
+            round(microtime(true) - $startedAt, 3) .
+            ' seconds; count: ' . $bookedSlots->count()
+        );
 
+        // 5. Restore saved checkout selections.
         $savedCheckout = session('booking.checkout', []);
         $savedSelections = $savedCheckout['selections'] ?? [];
 
-        logger()->info('Booking page: total controller time', [
-            'seconds' => round(microtime(true) - $startedAt, 3),
-        ]);
+        // 6. Total controller execution time.
+        error_log(
+            'Booking page: total controller time - ' .
+            round(microtime(true) - $totalStartedAt, 3) .
+            ' seconds'
+        );
 
         return Inertia::render('court_avenue/booking/index', [
             'courts' => $courts,
