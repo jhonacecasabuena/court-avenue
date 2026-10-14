@@ -14,38 +14,117 @@ use Inertia\Response;
 
 class BookingController extends Controller
 {
+    // public function index(): Response
+    // {
+    //     // Delete all expired unpaid bookings.
+    //     // No user_id condition — this applies to every user.
+    //     Booking::query()
+    //         ->where('status', 'pending')
+    //         ->where('payment_status', 'pending')
+    //         ->whereNotNull('expires_at')
+    //         ->where('expires_at', '<=', now())
+    //         ->delete();
+
+    //     $courts = Court::query()
+    //         ->where('status', 'available')
+    //         ->orderBy('id')
+    //         ->get();
+
+    //     $timeSlots = TimeSlot::query()
+    //         ->where('is_active', true)
+    //         ->orderBy('start_time')
+    //         ->get();
+
+    //     $bookedSlots = BookingItem::query()
+    //         ->whereDate(
+    //             'booking_date',
+    //             '>=',
+    //             now()->toDateString()
+    //         )
+    //         ->whereHas('booking', function ($query) {
+    //             $query->whereIn('status', [
+    //                 'pending',
+    //                 'confirmed',
+    //             ]);
+    //         })
+    //         ->with('booking:id,status,payment_status')
+    //         ->get([
+    //             'booking_id',
+    //             'booking_date',
+    //             'court_id',
+    //             'time_slot_id',
+    //         ])
+    //         ->map(function ($item) {
+    //             return [
+    //                 'date' => $item->booking_date->format('Y-m-d'),
+    //                 'court_id' => $item->court_id,
+    //                 'time_slot_id' => $item->time_slot_id,
+    //                 'status' => $item->booking->status,
+    //             ];
+    //         })
+    //         ->values();
+
+    //         $savedCheckout = session('booking.checkout', []);
+
+    //         $savedSelections = $savedCheckout['selections'] ?? [];
+
+    //     return Inertia::render(
+    //         'court_avenue/booking/index',
+    //         [
+    //             'courts' => $courts,
+    //             'timeSlots' => $timeSlots,
+    //             'bookedSlots' => $bookedSlots,
+    //             'savedSelections' => $savedSelections,
+    //         ]
+    //     );
+    // }
+
     public function index(): Response
     {
-        // Delete all expired unpaid bookings.
-        // No user_id condition — this applies to every user.
-        Booking::query()
+        $startedAt = microtime(true);
+
+        $queryStartedAt = microtime(true);
+
+        $deleted = Booking::query()
             ->where('status', 'pending')
             ->where('payment_status', 'pending')
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now())
             ->delete();
 
+        logger()->info('Booking page: expired cleanup', [
+            'seconds' => round(microtime(true) - $queryStartedAt, 3),
+            'deleted' => $deleted,
+        ]);
+
+        $queryStartedAt = microtime(true);
+
         $courts = Court::query()
             ->where('status', 'available')
             ->orderBy('id')
             ->get();
+
+        logger()->info('Booking page: courts', [
+            'seconds' => round(microtime(true) - $queryStartedAt, 3),
+        ]);
+
+        $queryStartedAt = microtime(true);
 
         $timeSlots = TimeSlot::query()
             ->where('is_active', true)
             ->orderBy('start_time')
             ->get();
 
+        logger()->info('Booking page: time slots', [
+            'seconds' => round(microtime(true) - $queryStartedAt, 3),
+        ]);
+
+        $queryStartedAt = microtime(true);
+
         $bookedSlots = BookingItem::query()
-            ->whereDate(
-                'booking_date',
-                '>=',
-                now()->toDateString()
-            )
+            ->whereDate('booking_date', '>=', now()->toDateString())
             ->whereHas('booking', function ($query) {
-                $query->whereIn('status', [
-                    'pending',
-                    'confirmed',
-                ]);
+                $query->whereIn('status', ['pending', 'confirmed']);
             })
             ->with('booking:id,status,payment_status')
             ->get([
@@ -64,19 +143,24 @@ class BookingController extends Controller
             })
             ->values();
 
-            $savedCheckout = session('booking.checkout', []);
+        logger()->info('Booking page: booked slots', [
+            'seconds' => round(microtime(true) - $queryStartedAt, 3),
+            'count' => $bookedSlots->count(),
+        ]);
 
-            $savedSelections = $savedCheckout['selections'] ?? [];
+        $savedCheckout = session('booking.checkout', []);
+        $savedSelections = $savedCheckout['selections'] ?? [];
 
-        return Inertia::render(
-            'court_avenue/booking/index',
-            [
-                'courts' => $courts,
-                'timeSlots' => $timeSlots,
-                'bookedSlots' => $bookedSlots,
-                'savedSelections' => $savedSelections,
-            ]
-        );
+        logger()->info('Booking page: total controller time', [
+            'seconds' => round(microtime(true) - $startedAt, 3),
+        ]);
+
+        return Inertia::render('court_avenue/booking/index', [
+            'courts' => $courts,
+            'timeSlots' => $timeSlots,
+            'bookedSlots' => $bookedSlots,
+            'savedSelections' => $savedSelections,
+        ]);
     }
 
     public function uploadPaymentProof(Request $request)
