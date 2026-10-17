@@ -301,7 +301,7 @@ class AdminController extends Controller
 
         $revenueHistoryRows = Booking::query()
             ->selectRaw("
-                TO_CHAR(DATE_TRUNC('month', paid_at), 'YYYY-MM') AS month,
+                DATE_FORMAT(paid_at, '%Y-%m') AS month,
                 SUM(total) AS amount
             ")
             ->where('status', 'confirmed')
@@ -309,8 +309,8 @@ class AdminController extends Controller
             ->whereNotNull('paid_at')
             ->where('paid_at', '>=', $revenueHistoryStart)
             ->where('paid_at', '<', $now->copy()->startOfMonth()->addMonth())
-            ->groupByRaw("DATE_TRUNC('month', paid_at)")
-            ->orderByRaw("DATE_TRUNC('month', paid_at)")
+            ->groupByRaw("DATE_FORMAT(paid_at, '%Y-%m')")
+            ->orderByRaw("DATE_FORMAT(paid_at, '%Y-%m')")
             ->get()
             ->keyBy('month');
 
@@ -369,13 +369,15 @@ class AdminController extends Controller
             ->join('time_slots', 'time_slots.id', '=', 'booking_items.time_slot_id')
             ->whereColumn('bookings.user_id', 'users.id')
             ->where('bookings.status', 'confirmed')
-            ->whereDate('booking_items.booking_date', '<', today('Asia/Manila'))
+            ->where('bookings.payment_status', 'paid')
+            ->whereDate('booking_items.booking_date', '<', $today)
             ->selectRaw("
                 COALESCE(
                     SUM(
-                        EXTRACT(
-                            EPOCH FROM (
-                                time_slots.end_time - time_slots.start_time
+                        TIME_TO_SEC(
+                            TIMEDIFF(
+                                time_slots.end_time,
+                                time_slots.start_time
                             )
                         ) / 3600
                     ),
@@ -443,8 +445,8 @@ class AdminController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query
-                        ->where('users.name', 'ilike', "%{$search}%")
-                        ->orWhere('users.email', 'ilike', "%{$search}%");
+                        ->where('users.name', 'like', "%{$search}%")
+                        ->orWhere('users.email', 'like', "%{$search}%");
                 });
             })
 
